@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -22,6 +22,23 @@ const createUserIcon = () => {
     `,
         iconSize: [24, 24],
         iconAnchor: [12, 12],
+    });
+};
+
+// Custom Destination Icon (Red Pin)
+const createDestinationIcon = () => {
+    return L.divIcon({
+        className: "custom-destination-icon",
+        html: `
+      <div class="flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#FF4747" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3" fill="white"></circle>
+        </svg>
+      </div>
+    `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
     });
 };
 
@@ -48,8 +65,27 @@ const RecenterMap = ({ position }: { position: [number, number] }) => {
     return null;
 };
 
-const MapComponent = () => {
+// Component to handle map clicks
+const MapClickHandler = ({
+    onDestinationSelect
+}: {
+    onDestinationSelect: (lat: number, lng: number) => void
+}) => {
+    useMapEvents({
+        click: (e) => {
+            onDestinationSelect(e.latlng.lat, e.latlng.lng);
+        },
+    });
+    return null;
+};
+
+interface MapComponentProps {
+    onDestinationChange?: (destination: [number, number] | null, distance: number) => void;
+}
+
+const MapComponent = ({ onDestinationChange }: MapComponentProps) => {
     const [position, setPosition] = useState<[number, number] | null>(null);
+    const [destination, setDestination] = useState<[number, number] | null>(null);
     const [taxis, setTaxis] = useState<[number, number][]>([]);
 
     useEffect(() => {
@@ -82,6 +118,30 @@ const MapComponent = () => {
         }
     }, []);
 
+    // Calculate distance between two points (Haversine formula)
+    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const R = 6371; // Radius of the Earth in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c; // Distance in km
+        return distance;
+    };
+
+    const handleDestinationSelect = (lat: number, lng: number) => {
+        const newDestination: [number, number] = [lat, lng];
+        setDestination(newDestination);
+
+        if (position) {
+            const distance = calculateDistance(position[0], position[1], lat, lng);
+            onDestinationChange?.(newDestination, distance);
+        }
+    };
+
     if (!position) {
         return (
             <div className="w-full h-full flex items-center justify-center bg-[#0C0C0C] text-white">
@@ -104,11 +164,19 @@ const MapComponent = () => {
             />
 
             <RecenterMap position={position} />
+            <MapClickHandler onDestinationSelect={handleDestinationSelect} />
 
             {/* User Marker */}
             <Marker position={position} icon={createUserIcon()}>
                 <Popup className="custom-popup">You are here</Popup>
             </Marker>
+
+            {/* Destination Marker */}
+            {destination && (
+                <Marker position={destination} icon={createDestinationIcon()}>
+                    <Popup>Your destination</Popup>
+                </Marker>
+            )}
 
             {/* Taxi Markers */}
             {taxis.map((taxiPos, index) => (

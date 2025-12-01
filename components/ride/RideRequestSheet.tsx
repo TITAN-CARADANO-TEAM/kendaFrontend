@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
-import { MapPin, Navigation, Clock, CreditCard } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { motion, PanInfo } from "framer-motion";
+import { MapPin, Navigation, Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -10,28 +10,73 @@ import { cn } from "@/lib/utils";
 interface RideRequestSheetProps {
     isOpen?: boolean;
     onClose?: () => void;
+    destination?: [number, number] | null;
+    distance?: number;
 }
 
-export const RideRequestSheet = ({ isOpen = true, onClose }: RideRequestSheetProps) => {
+export const RideRequestSheet = ({
+    isOpen = true,
+    onClose,
+    destination: externalDestination,
+    distance: externalDistance = 0
+}: RideRequestSheetProps) => {
+    const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
+    const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
+
+    // Calculate price based on distance from map
+    useEffect(() => {
+        if (externalDestination && externalDistance > 0) {
+            const basePrice = 2000;
+            const pricePerKm = 500;
+            const calculatedPrice = basePrice + (pricePerKm * externalDistance);
+            const calculatedTime = Math.ceil(externalDistance * 2); // ~2 min per km
+
+            setEstimatedPrice(Math.round(calculatedPrice));
+            setEstimatedTime(calculatedTime);
+        } else {
+            setEstimatedPrice(null);
+            setEstimatedTime(null);
+        }
+    }, [externalDestination, externalDistance]);
+
+    // Handle drag to close
+    const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        const threshold = 150; // Minimum drag distance to close
+        if (info.offset.y > threshold) {
+            onClose?.();
+        }
+    };
+
+    if (!isOpen) return null;
+
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
-            {/* Backdrop (Optional - uncomment if needed) */}
-            {/* <div className="absolute inset-0 bg-black/50 pointer-events-auto" onClick={onClose} /> */}
-
             <motion.div
+                drag="y"
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragElastic={0.2}
+                onDragEnd={handleDragEnd}
                 initial={{ y: "100%" }}
-                animate={{ y: 0 }}
+                animate={{ y: isOpen ? 0 : "100%" }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
                 className={cn(
                     "w-full max-w-md pointer-events-auto",
                     "bg-[#0C0C0C] border-t border-[#1A1A1A]",
                     "rounded-t-[24px] p-6 pb-8",
-                    "shadow-2xl"
+                    "shadow-2xl relative"
                 )}
             >
-                {/* Handle */}
-                <div className="w-12 h-1.5 bg-[#2A2A2A] rounded-full mx-auto mb-8" />
+                {/* Close Button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 text-[#9A9A9A] hover:text-white transition-colors z-20"
+                >
+                    <X className="w-6 h-6" />
+                </button>
+
+                {/* Drag Handle */}
+                <div className="w-12 h-1.5 bg-[#2A2A2A] rounded-full mx-auto mb-8 cursor-grab active:cursor-grabbing" />
 
                 {/* Title */}
                 <h2 className="text-2xl font-heading font-bold text-white mb-6">
@@ -42,47 +87,65 @@ export const RideRequestSheet = ({ isOpen = true, onClose }: RideRequestSheetPro
                 <div className="space-y-4 mb-8">
                     {/* Departure Input */}
                     <div className="relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#F0B90B]">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#F0B90B] z-10">
                             <Navigation className="w-5 h-5 fill-current" />
                         </div>
                         <Input
                             defaultValue="My current location"
                             className="pl-12 bg-[#151515] border-[#1A1A1A] text-white placeholder:text-[#9A9A9A] focus-visible:ring-[#F0B90B]/50"
+                            readOnly
                         />
                     </div>
 
-                    {/* Destination Input */}
+                    {/* Destination Display */}
                     <div className="relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A]">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A] z-10">
                             <MapPin className="w-5 h-5" />
                         </div>
-                        <Input
-                            placeholder="Where are you going?"
-                            className="pl-12 bg-[#151515] border-[#1A1A1A] text-white placeholder:text-[#9A9A9A] focus-visible:ring-[#F0B90B]/50"
-                        />
+                        <div className="pl-12 pr-4 h-11 bg-[#151515] border border-[#1A1A1A] text-white rounded-button flex items-center">
+                            {externalDestination ? (
+                                <span className="text-sm">
+                                    Destination selected ({externalDistance.toFixed(2)} km)
+                                </span>
+                            ) : (
+                                <span className="text-[#9A9A9A] text-sm">
+                                    Click on the map to select destination
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Estimation Section */}
-                <div className="flex items-center justify-between mb-8 px-1">
-                    <div className="flex flex-col">
-                        <span className="text-[#9A9A9A] text-sm font-medium mb-1">Estimated price</span>
-                        <span className="text-3xl font-bold text-white font-heading">5000 FC</span>
-                    </div>
+                {estimatedPrice && estimatedTime ? (
+                    <div className="flex items-center justify-between mb-8 px-1">
+                        <div className="flex flex-col">
+                            <span className="text-[#9A9A9A] text-sm font-medium mb-1">Estimated price</span>
+                            <span className="text-3xl font-bold text-white font-heading">
+                                {estimatedPrice.toLocaleString()} FC
+                            </span>
+                        </div>
 
-                    <div className="flex items-center gap-3 bg-[#1A1A1A] px-4 py-2 rounded-lg border border-[#2A2A2A]">
-                        <Clock className="w-4 h-4 text-[#F0B90B]" />
-                        <span className="text-[#9A9A9A] text-sm font-medium">~3 min</span>
+                        <div className="flex items-center gap-3 bg-[#1A1A1A] px-4 py-2 rounded-lg border border-[#2A2A2A]">
+                            <Clock className="w-4 h-4 text-[#F0B90B]" />
+                            <span className="text-[#9A9A9A] text-sm font-medium">~{estimatedTime} min</span>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="mb-8 px-1 py-4 text-center">
+                        <span className="text-[#9A9A9A] text-sm">
+                            Enter a destination to see price estimate
+                        </span>
+                    </div>
+                )}
 
                 {/* Action Button */}
                 <Button
-                    className="w-full h-14 text-lg font-bold bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 rounded-xl"
+                    disabled={!externalDestination || !estimatedPrice}
+                    className="w-full h-14 text-lg font-bold bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Order Taxi
                 </Button>
-
             </motion.div>
         </div>
     );
