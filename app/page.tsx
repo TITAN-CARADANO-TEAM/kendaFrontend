@@ -1,3 +1,6 @@
+"use client";
+
+import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
@@ -20,10 +23,14 @@ export default function Home() {
                             Earn rewards, reduce costs, and contribute to sustainable transportation.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <Button size="lg">Connect Wallet</Button>
-                            <Button size="lg" variant="secondary">
-                                Explore Map
-                            </Button>
+                            <Link href="/wallet">
+                                <Button size="lg">Connect Wallet</Button>
+                            </Link>
+                            <Link href="/map">
+                                <Button size="lg" variant="secondary">
+                                    Explore Map
+                                </Button>
+                            </Link>
                         </div>
                     </div>
                 </section>
@@ -91,7 +98,9 @@ export default function Home() {
                             <p className="text-body text-foreground-secondary mb-8 max-w-2xl mx-auto">
                                 Connect your Cardano wallet and experience the future of urban mobility today.
                             </p>
-                            <Button size="lg">Get Started Now</Button>
+                            <Link href="/map">
+                                <Button size="lg">Get Started Now</Button>
+                            </Link>
                         </CardContent>
                     </Card>
                 </section>
