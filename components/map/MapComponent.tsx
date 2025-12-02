@@ -53,16 +53,19 @@ const createDestinationIcon = () => {
 };
 
 // Custom Taxi Icon (White/Gray Car)
+// Custom Taxi Icon (White/Gray Car)
 const createTaxiIcon = () => {
     return L.divIcon({
         className: "custom-taxi-icon",
         html: `
-      <div class="flex items-center justify-center w-8 h-8 bg-white text-black rounded-full shadow-md border border-gray-200">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+      <div class="flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-xl border-2 border-black">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="black" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>
+        </svg>
       </div>
     `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
     });
 };
 
@@ -145,15 +148,47 @@ const MapComponent = ({ onDestinationChange }: MapComponentProps) => {
     const handleDestinationSelect = (lat: number, lng: number) => {
         const newDestination: [number, number] = [lat, lng];
         setDestination(newDestination);
-
-        if (position) {
-            const distance = calculateDistance(position[0], position[1], lat, lng);
-            onDestinationChange?.(newDestination, distance);
-        }
+        // Note: onDestinationChange is now called in the useEffect after route calculation
     };
 
-    // Calculate route path (simple straight line for now, but using Polyline)
-    const routePath = position && destination ? [position, destination] : [];
+    // Calculate route path using OSRM API
+    const [routePath, setRoutePath] = useState<[number, number][]>([]);
+
+    useEffect(() => {
+        if (position && destination) {
+            const fetchRoute = async () => {
+                try {
+                    // OSRM requires coordinates in [lon, lat] format
+                    const start = `${position[1]},${position[0]}`;
+                    const end = `${destination[1]},${destination[0]}`;
+
+                    const response = await fetch(
+                        `https://router.project-osrm.org/route/v1/driving/${start};${end}?overview=full&geometries=geojson`
+                    );
+
+                    const data = await response.json();
+
+                    if (data.routes && data.routes.length > 0) {
+                        // OSRM returns [lon, lat], Leaflet needs [lat, lon]
+                        const coordinates = data.routes[0].geometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
+                        setRoutePath(coordinates);
+
+                        // Update distance based on actual route
+                        const routeDistanceKm = data.routes[0].distance / 1000;
+                        onDestinationChange?.(destination, routeDistanceKm);
+                    }
+                } catch (error) {
+                    console.error("Error fetching route:", error);
+                    // Fallback to straight line if API fails
+                    setRoutePath([position, destination]);
+                }
+            };
+
+            fetchRoute();
+        } else {
+            setRoutePath([]);
+        }
+    }, [position, destination]); // Remove onDestinationChange from dependency to avoid loop if it's not memoized
 
     if (!position) {
         return (
