@@ -59,161 +59,155 @@ export default function MapPage() {
     };
 
     return (
-        <main className="relative h-screen w-full overflow-hidden bg-black">
-            {/* Map Background (z-0) */}
+        <main className="relative w-full h-full overflow-hidden bg-black">
+            {/* Map Background (z-0) - Covers EVERYTHING */}
             <div className="absolute inset-0 z-0">
                 <MapComponent onDestinationChange={handleDestinationChange} />
             </div>
 
-            {/* Safety Toolkit (Floating on Map during Ride) */}
-            <AnimatePresence>
-                {step === 'RIDE_ACTIVE' && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="absolute top-24 right-4 z-40 pointer-events-auto"
+            {/* Floating Header (App Shell) */}
+            <header className="absolute top-0 left-0 right-0 z-40 p-4 pt-safe flex items-center justify-between pointer-events-none">
+                {/* Left: Menu/Back */}
+                <div className="pointer-events-auto">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="bg-[#0C0C0C] text-white rounded-full h-10 w-10 shadow-lg border border-[#1A1A1A]"
+                        onClick={() => window.location.href = '/'} // Or open menu
                     >
-                        <SafetyToolkit />
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        {step === 'IDLE' ? <Menu className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
+                    </Button>
+                </div>
 
-            {/* Header Overlay (Always visible except in Rating Screen) */}
-            {step !== 'RIDE_COMPLETED' && (
-                <header className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
-                    <div className="flex items-center gap-2 pointer-events-auto">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-white bg-black/20 backdrop-blur-md rounded-full hover:bg-black/40 h-10 w-10 p-0"
-                            onClick={() => window.location.href = '/'}
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Button>
-                    </div>
+                {/* Center: Title */}
+                <h1 className="font-heading font-bold text-lg text-white drop-shadow-md tracking-wide pointer-events-auto">
+                    {step === 'IDLE' ? 'KENDA' : 'Ride'}
+                </h1>
 
-                    {/* Desktop: Centered Logo */}
-                    <h1 className="font-heading font-bold text-xl text-white drop-shadow-md tracking-wide absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
-                        KENDA
-                    </h1>
+                {/* Right: Notifications/SOS */}
+                <div className="pointer-events-auto">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="bg-[#0C0C0C] text-white rounded-full h-10 w-10 shadow-lg border border-[#1A1A1A]"
+                        onClick={() => {
+                            if (step !== 'RIDE_ACTIVE') {
+                                window.location.href = '/notifications';
+                            }
+                        }}
+                    >
+                        {step === 'RIDE_ACTIVE' ? (
+                            <SafetyToolkit />
+                        ) : (
+                            <div className="w-5 h-5 bg-red-500 rounded-full border-2 border-white" /> // Notification dot placeholder or Bell icon
+                        )}
+                    </Button>
+                </div>
+            </header>
 
-                    {/* Desktop: Menu Button on right */}
-                    <div className="pointer-events-auto">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-white bg-black/20 backdrop-blur-md rounded-full hover:bg-black/40 h-10 w-10 p-0"
-                        >
-                            <Menu className="w-6 h-6" />
-                        </Button>
-                    </div>
-                </header>
-            )}
+            {/* UI Overlays */}
+            <div className="relative z-10 pointer-events-none h-full flex flex-col justify-end pb-[calc(4rem+env(safe-area-inset-bottom))]">
+                {/* pb-safe + nav height (approx 4rem) */}
 
-            {/* UI Overlays based on Step - Responsive Container */}
-            <div className="relative z-10 pointer-events-none h-full flex flex-col md:flex-row md:items-start md:p-6">
-
-                {/* Desktop Sidebar Container (Hidden during Rating Screen) */}
-                {step !== 'RIDE_COMPLETED' && (
-                    <div className="md:w-[400px] md:h-full md:flex md:flex-col md:justify-end md:mr-auto relative w-full h-full flex flex-col">
-
-                        {/* IDLE State: Floating Action Button */}
-                        <AnimatePresence>
-                            {step === 'IDLE' && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 20 }}
-                                    className="absolute bottom-8 left-4 right-4 md:static md:mb-0 pointer-events-auto mt-auto"
-                                >
-                                    <Button
-                                        onClick={() => setStep('SELECTING')}
-                                        className="w-full h-14 bg-[#F0B90B] text-black font-bold text-lg rounded-xl shadow-lg hover:bg-[#F0B90B]/90"
-                                    >
-                                        Where to?
-                                    </Button>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* SELECTING State: Bottom Sheet */}
-                        <div className="md:absolute md:bottom-0 md:left-0 md:w-full">
-                            <RideRequestSheet
-                                isOpen={step === 'SELECTING'}
-                                onClose={() => setStep('IDLE')}
-                                destination={destination}
-                                distance={distance}
-                                onOrder={handleOrder}
-                            />
-                        </div>
-
-                        {/* SEARCHING State: Loader Overlay */}
-                        <AnimatePresence>
-                            {step === 'SEARCHING' && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-50 pointer-events-auto md:rounded-2xl"
-                                >
-                                    <div className="bg-[#0C0C0C] p-8 rounded-2xl border border-[#1A1A1A] flex flex-col items-center shadow-2xl">
-                                        <Loader2 className="w-12 h-12 text-[#F0B90B] animate-spin mb-4" />
-                                        <h3 className="text-white font-heading font-bold text-xl mb-2">Searching for a driver...</h3>
-                                        <p className="text-[#9A9A9A] text-sm">Contacting nearby drivers</p>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* RIDE_ACTIVE State: Driver Card & Info Overlay */}
-                        <AnimatePresence>
-                            {step === 'RIDE_ACTIVE' && (
-                                <div className="pointer-events-auto w-full flex flex-col gap-4 mt-auto md:mb-0 pb-8 px-4 md:px-0">
-                                    {/* Driver Card */}
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                    >
-                                        <DriverTrustCard
-                                            driverName="Jean-Pierre M."
-                                            driverImage="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&auto=format&fit=crop&q=60"
-                                            vehicleModel="Toyota Corolla"
-                                            plateNumber="KV 1234 BB"
-                                            isVerified={true}
-                                            rating={4.9}
-                                        />
-                                    </motion.div>
-
-                                    {/* Ride Info */}
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                    >
-                                        <ActiveRideOverlay
-                                            remainingTime={rideTime}
-                                            remainingDistance={rideDistance}
-                                            arrivalTime={arrivalTime}
-                                            className="static"
-                                        />
-                                    </motion.div>
-                                </div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                )}
-
-                {/* RIDE_COMPLETED State: Rating Screen (Full Screen Overlay) */}
+                {/* IDLE State: Floating Action Button */}
                 <AnimatePresence>
-                    {step === 'RIDE_COMPLETED' && (
+                    {step === 'IDLE' && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            className="p-4 pointer-events-auto"
+                        >
+                            <Button
+                                onClick={() => setStep('SELECTING')}
+                                className="w-full h-14 bg-[#F0B90B] text-black font-bold text-lg rounded-xl shadow-lg hover:bg-[#F0B90B]/90"
+                            >
+                                Where to?
+                            </Button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* SELECTING State: Bottom Sheet */}
+                {/* We place this outside the padded container if we want it to cover the nav bar, 
+                    but user said "pb-24... pour que le contenu ne soit pas caché". 
+                    However, drawers usually cover nav bars. 
+                    I'll keep it here but ensure it has high z-index if needed. 
+                    Actually, RideRequestSheet is likely a drawer. 
+                */}
+                <div className="pointer-events-auto">
+                    <RideRequestSheet
+                        isOpen={step === 'SELECTING'}
+                        onClose={() => setStep('IDLE')}
+                        destination={destination}
+                        distance={distance}
+                        onOrder={handleOrder}
+                    />
+                </div>
+
+                {/* SEARCHING State: Loader Overlay */}
+                <AnimatePresence>
+                    {step === 'SEARCHING' && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-50 pointer-events-auto"
+                        >
+                            <div className="bg-[#0C0C0C] p-8 rounded-2xl border border-[#1A1A1A] flex flex-col items-center shadow-2xl">
+                                <Loader2 className="w-12 h-12 text-[#F0B90B] animate-spin mb-4" />
+                                <h3 className="text-white font-heading font-bold text-xl mb-2">Searching...</h3>
+                                <p className="text-[#9A9A9A] text-sm">Contacting drivers</p>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* RIDE_ACTIVE State: Driver Card & Info */}
+                <AnimatePresence>
+                    {step === 'RIDE_ACTIVE' && (
+                        <div className="pointer-events-auto w-full flex flex-col gap-4 p-4">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <DriverTrustCard
+                                    driverName="Jean-Pierre M."
+                                    driverImage="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&auto=format&fit=crop&q=60"
+                                    vehicleModel="Toyota Corolla"
+                                    plateNumber="KV 1234 BB"
+                                    isVerified={true}
+                                    rating={4.9}
+                                />
+                            </motion.div>
+
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <ActiveRideOverlay
+                                    remainingTime={rideTime}
+                                    remainingDistance={rideDistance}
+                                    arrivalTime={arrivalTime}
+                                    className="static"
+                                />
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* RIDE_COMPLETED State: Rating Screen (Full Screen Overlay) */}
+            <AnimatePresence>
+                {step === 'RIDE_COMPLETED' && (
+                    <div className="absolute inset-0 z-[60] bg-black">
                         <RideRatingScreen
                             price={estimatedPrice}
                             onComplete={handleRatingComplete}
                         />
-                    )}
-                </AnimatePresence>
-
-            </div>
+                    </div>
+                )}
+            </AnimatePresence>
         </main>
     );
 }

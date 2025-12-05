@@ -19,6 +19,8 @@ export const metadata: Metadata = {
     description: "Decentralized urban mobility platform powered by Cardano blockchain",
 };
 
+import { MobileNavBar } from "@/components/layout/MobileNavBar";
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -26,8 +28,9 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" className="dark">
-            <body className={`${inter.variable} ${manrope.variable} antialiased`}>
+            <body className={`${inter.variable} ${manrope.variable} antialiased h-dvh w-screen overflow-hidden bg-black text-white`}>
                 {children}
+                <MobileNavBar />
             </body>
         </html>
     );

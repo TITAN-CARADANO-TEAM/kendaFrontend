@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function Home() {
     return (
-        <>
+
+        <div className="h-full overflow-y-auto bg-background">
             <Header />
-            <main className="min-h-screen bg-background">
+            <main className="min-h-screen">
                 {/* Hero Section */}
                 <section className="container mx-auto px-4 py-24 md:py-32">
                     <div className="flex flex-col items-center justify-center text-center">
@@ -106,6 +107,6 @@ export default function Home() {
                 </section>
             </main>
             <Footer />
-        </>
+        </div>
     );
 }
