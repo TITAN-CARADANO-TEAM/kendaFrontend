@@ -26,4 +26,15 @@
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Safe Area Utilities */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .h-safe-screen {
+    height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
 }

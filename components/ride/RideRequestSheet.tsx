@@ -65,7 +65,7 @@ export const RideRequestSheet = ({
                 className={cn(
                     "w-full max-w-md pointer-events-auto",
                     "bg-[#0C0C0C] border-t border-[#1A1A1A]",
-                    "rounded-t-[24px] p-6 pb-8",
+                    "rounded-t-[24px] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))]",
                     "shadow-2xl relative"
                 )}
             >
