@@ -1,20 +1,25 @@
 "use client";
 
 import React, { useState } from "react";
-import { User, Lock, Mail, Phone, Loader2, Eye, EyeOff } from "lucide-react";
+import { User, Lock, Mail, Phone, Loader2, Eye, EyeOff, Car, MapPin, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
+type UserRole = 'PASSENGER' | 'DRIVER';
+
 interface AuthScreenProps {
-    onAuthenticated?: () => void;
+    onAuthenticated?: (role: UserRole) => void;
+    defaultRole?: UserRole;
 }
 
-export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
+export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthScreenProps) {
     const [mode, setMode] = useState<'LOGIN' | 'SIGNUP'>('LOGIN');
+    const [role, setRole] = useState<UserRole>(defaultRole);
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [city, setCity] = useState("");
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,16 +29,19 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
         setTimeout(() => {
             setIsLoading(false);
             if (onAuthenticated) {
-                onAuthenticated();
+                onAuthenticated(role);
             } else {
-                // Default behavior if no callback (e.g. redirect)
-                window.location.href = '/map';
+                // Default behavior based on role
+                if (role === 'DRIVER' && mode === 'SIGNUP') {
+                    window.location.href = '/driver-application';
+                } else {
+                    window.location.href = '/map';
+                }
             }
         }, 1500);
     };
 
     return (
-
         <div className="min-h-[100dvh] w-full bg-black text-white flex items-center justify-center p-6 overflow-y-auto">
             <div className="w-full max-w-md bg-black md:bg-[#0C0C0C] md:border md:border-[#1A1A1A] md:rounded-3xl md:p-8 md:shadow-2xl flex flex-col h-full md:h-auto min-h-[500px]">
                 {/* Logo Section */}
@@ -91,6 +99,57 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
                             transition={{ duration: 0.2 }}
                             className="space-y-4 w-full"
                         >
+                            {/* Role Selector - Only in SIGNUP mode */}
+                            {mode === 'SIGNUP' && (
+                                <div className="mb-2">
+                                    <label className="text-xs font-bold text-[#9A9A9A] uppercase tracking-wider mb-2 block">
+                                        Je m&apos;inscris en tant que
+                                    </label>
+                                    <div className="flex items-center gap-2 bg-[#1A1A1A] p-1 rounded-lg">
+                                        <button
+                                            type="button"
+                                            onClick={() => setRole('PASSENGER')}
+                                            className={cn(
+                                                "flex-1 py-3 px-4 rounded-md font-bold text-sm transition-all flex items-center justify-center gap-2",
+                                                role === 'PASSENGER'
+                                                    ? "bg-[#F0B90B] text-black shadow-lg"
+                                                    : "bg-transparent text-[#9A9A9A] hover:text-white"
+                                            )}
+                                        >
+                                            <User className="w-4 h-4" />
+                                            Passager
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setRole('DRIVER')}
+                                            className={cn(
+                                                "flex-1 py-3 px-4 rounded-md font-bold text-sm transition-all flex items-center justify-center gap-2",
+                                                role === 'DRIVER'
+                                                    ? "bg-[#F0B90B] text-black shadow-lg"
+                                                    : "bg-transparent text-[#9A9A9A] hover:text-white"
+                                            )}
+                                        >
+                                            <Car className="w-4 h-4" />
+                                            Chauffeur
+                                        </button>
+                                    </div>
+
+                                    {/* Partner Badge - Only when Driver is selected */}
+                                    {role === 'DRIVER' && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="mt-3 flex items-center gap-2 bg-[#F0B90B]/10 border border-[#F0B90B]/20 rounded-lg px-3 py-2"
+                                        >
+                                            <Shield className="w-4 h-4 text-[#F0B90B]" />
+                                            <span className="text-xs text-[#F0B90B] font-bold">
+                                                Espace Partenaire Professionnel
+                                            </span>
+                                        </motion.div>
+                                    )}
+                                </div>
+                            )}
+
                             {mode === 'SIGNUP' && (
                                 <div className="relative">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A]">
@@ -148,6 +207,34 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
                                     />
                                 </div>
                             )}
+
+                            {/* City Field - Only for Driver Signup */}
+                            {mode === 'SIGNUP' && role === 'DRIVER' && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="relative"
+                                >
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A]">
+                                        <MapPin className="w-5 h-5" />
+                                    </div>
+                                    <select
+                                        value={city}
+                                        onChange={(e) => setCity(e.target.value)}
+                                        className="h-14 w-full pl-12 pr-4 bg-[#0C0C0C] md:bg-black border border-[#1A1A1A] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F0B90B]/50 appearance-none cursor-pointer"
+                                        required
+                                    >
+                                        <option value="" disabled className="bg-[#0C0C0C] text-[#666]">
+                                            Ville d&apos;opération
+                                        </option>
+                                        <option value="goma" className="bg-[#0C0C0C]">Goma</option>
+                                        <option value="bukavu" className="bg-[#0C0C0C]">Bukavu</option>
+                                        <option value="kinshasa" className="bg-[#0C0C0C]">Kinshasa</option>
+                                        <option value="lubumbashi" className="bg-[#0C0C0C]">Lubumbashi</option>
+                                    </select>
+                                </motion.div>
+                            )}
                         </motion.div>
                     </AnimatePresence>
 
@@ -160,9 +247,25 @@ export function AuthScreen({ onAuthenticated }: AuthScreenProps) {
                             {isLoading ? (
                                 <Loader2 className="w-6 h-6 animate-spin" />
                             ) : (
-                                mode === 'LOGIN' ? "Se connecter" : "Créer mon compte"
+                                mode === 'LOGIN'
+                                    ? "Se connecter"
+                                    : role === 'DRIVER'
+                                        ? "Commencer ma candidature"
+                                        : "Créer mon compte"
                             )}
                         </Button>
+
+                        {/* Driver Signup Notice */}
+                        {mode === 'SIGNUP' && role === 'DRIVER' && (
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="mt-3 text-xs text-center text-[#9A9A9A] leading-relaxed"
+                            >
+                                <Car className="w-3 h-3 inline mr-1" />
+                                L&apos;inscription chauffeur nécessite la validation de vos documents.
+                            </motion.p>
+                        )}
 
                         {mode === 'LOGIN' && (
                             <button

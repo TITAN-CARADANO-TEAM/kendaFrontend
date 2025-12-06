@@ -1,0 +1,271 @@
+"use client";
+
+import React from "react";
+import {
+    ShieldAlert,
+    Clock,
+    FileText,
+    User,
+    CheckCircle2,
+    RefreshCw,
+    Mail,
+    Bell,
+    ArrowRight
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
+
+interface DriverPendingVerificationProps {
+    driverName?: string;
+    submittedDate?: string;
+    estimatedCompletionDate?: string;
+    onContactSupport?: () => void;
+    onLogout?: () => void;
+}
+
+export function DriverPendingVerification({
+    driverName = "Alexandre K.",
+    submittedDate = "05 Décembre 2025",
+    estimatedCompletionDate = "07 Décembre 2025",
+    onContactSupport,
+    onLogout
+}: DriverPendingVerificationProps) {
+    const handleRefresh = () => {
+        // Simulate API call to check verification status
+        window.location.reload();
+    };
+
+    const verificationSteps = [
+        {
+            icon: <FileText className="w-4 h-4" />,
+            label: "Vérification des documents",
+            status: "in-progress" as const,
+            time: "En cours..."
+        },
+        {
+            icon: <User className="w-4 h-4" />,
+            label: "Validation par les autorités",
+            status: "pending" as const,
+            time: "12-24h"
+        },
+        {
+            icon: <CheckCircle2 className="w-4 h-4" />,
+            label: "Activation du compte chauffeur",
+            status: "pending" as const,
+            time: "24-48h"
+        }
+    ];
+
+    return (
+        <div className="min-h-screen bg-black text-white flex flex-col">
+            {/* Header */}
+            <div className="pt-safe px-6 py-6 border-b border-[#1A1A1A]">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-heading font-bold">KENDA</h1>
+                        <p className="text-xs text-[#9A9A9A] uppercase tracking-widest">Espace Chauffeur</p>
+                    </div>
+                    <button
+                        onClick={onLogout}
+                        className="text-sm text-[#9A9A9A] hover:text-white transition-colors"
+                    >
+                        Se déconnecter
+                    </button>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-12">
+                <div className="w-full max-w-md mx-auto space-y-8">
+                    {/* Animated Icon */}
+                    <div className="relative mx-auto w-32 h-32 mb-8">
+                        <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                            className="absolute inset-0 rounded-full border-2 border-dashed border-[#F0B90B]/30"
+                        />
+                        <div className="absolute inset-4 rounded-full bg-[#F0B90B]/10 border-2 border-[#F0B90B]/30 flex items-center justify-center">
+                            <motion.div
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                            >
+                                <ShieldAlert className="w-12 h-12 text-[#F0B90B]" />
+                            </motion.div>
+                        </div>
+                        <div className="absolute inset-0 rounded-full bg-[#F0B90B]/5 animate-ping" />
+                    </div>
+
+                    {/* Title */}
+                    <div className="text-center">
+                        <h2 className="text-3xl font-heading font-bold mb-3">
+                            Vérification en cours
+                        </h2>
+                        <p className="text-[#9A9A9A] leading-relaxed">
+                            Bienvenue, <span className="text-white font-bold">{driverName}</span>
+                        </p>
+                        <p className="text-[#9A9A9A] leading-relaxed mt-2">
+                            Votre candidature a été soumise avec succès et est actuellement en cours d&apos;analyse.
+                        </p>
+                    </div>
+
+                    {/* Status Card */}
+                    <Card className="bg-[#0C0C0C] border-[#1A1A1A]">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-[#F0B90B]" />
+                                    <span className="text-sm font-bold text-white">Statut de la vérification</span>
+                                </div>
+                                <button
+                                    onClick={handleRefresh}
+                                    className="p-2 hover:bg-[#1A1A1A] rounded-lg transition-colors group"
+                                >
+                                    <RefreshCw className="w-4 h-4 text-[#9A9A9A] group-hover:text-[#F0B90B] group-hover:rotate-180 transition-all" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-3 mb-4">
+                                {verificationSteps.map((step, index) => (
+                                    <VerificationStep
+                                        key={index}
+                                        icon={step.icon}
+                                        label={step.label}
+                                        status={step.status}
+                                        time={step.time}
+                                    />
+                                ))}
+                            </div>
+
+                            <div className="pt-4 border-t border-[#1A1A1A] space-y-2">
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-[#666]">Date de soumission:</span>
+                                    <span className="text-white">{submittedDate}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-[#666]">Finalisation estimée:</span>
+                                    <span className="text-[#F0B90B] font-bold">{estimatedCompletionDate}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Info Cards */}
+                    <div className="space-y-4">
+                        {/* Notification Card */}
+                        <Card className="bg-gradient-to-r from-[#F0B90B]/10 to-transparent border-l-4 border-[#F0B90B]">
+                            <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                    <Bell className="w-5 h-5 text-[#F0B90B] flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-bold text-white mb-1">
+                                            Vous serez notifié
+                                        </p>
+                                        <p className="text-xs text-[#9A9A9A] leading-relaxed">
+                                            Vous recevrez un SMS et un email dès que votre compte sera activé.
+                                            Restez connecté pour ne rien manquer !
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* What's Next Card */}
+                        <Card className="bg-[#0C0C0C] border-[#1A1A1A]">
+                            <CardContent className="p-4">
+                                <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                    <ArrowRight className="w-4 h-4 text-[#F0B90B]" />
+                                    Pendant l&apos;attente
+                                </h3>
+                                <ul className="space-y-2 text-xs text-[#9A9A9A]">
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-[#F0B90B] mt-0.5">•</span>
+                                        <span>Assurez-vous que votre véhicule est en bon état</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-[#F0B90B] mt-0.5">•</span>
+                                        <span>Préparez votre espace de travail (chargeur, support GPS)</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-[#F0B90B] mt-0.5">•</span>
+                                        <span>Lisez notre guide du chauffeur partenaire</span>
+                                    </li>
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="space-y-3">
+                        <Button
+                            onClick={onContactSupport}
+                            variant="outline"
+                            className="w-full h-12 border-[#333333] text-white hover:bg-[#1A1A1A] hover:border-[#F0B90B]"
+                        >
+                            <Mail className="w-4 h-4 mr-2" />
+                            Contacter le support
+                        </Button>
+
+                        <p className="text-center text-xs text-[#666]">
+                            Délai moyen de vérification : <span className="text-[#F0B90B] font-bold">24-48 heures</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-6 border-t border-[#1A1A1A] pb-safe">
+                <p className="text-center text-xs text-[#666]">
+                    © 2025 KENDA • Version 1.0.2
+                </p>
+            </div>
+        </div>
+    );
+}
+
+// Sub-component
+function VerificationStep({
+    icon,
+    label,
+    status,
+    time
+}: {
+    icon: React.ReactNode;
+    label: string;
+    status: 'in-progress' | 'pending' | 'completed';
+    time: string;
+}) {
+    return (
+        <div className="flex items-center gap-3">
+            <div
+                className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
+                    status === 'in-progress' && "bg-[#F0B90B]/20 text-[#F0B90B] animate-pulse",
+                    status === 'pending' && "bg-[#1A1A1A] text-[#666]",
+                    status === 'completed' && "bg-green-500/20 text-green-500"
+                )}
+            >
+                {icon}
+            </div>
+            <div className="flex-1">
+                <p className={cn(
+                    "text-sm font-medium",
+                    status === 'in-progress' && "text-white",
+                    status === 'pending' && "text-[#9A9A9A]",
+                    status === 'completed' && "text-white"
+                )}>
+                    {label}
+                </p>
+            </div>
+            <span className={cn(
+                "text-xs",
+                status === 'in-progress' && "text-[#F0B90B] font-bold",
+                status === 'pending' && "text-[#666]",
+                status === 'completed' && "text-green-500"
+            )}>
+                {time}
+            </span>
+        </div>
+    );
+}

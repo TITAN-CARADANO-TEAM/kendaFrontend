@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, PanInfo } from "framer-motion";
-import { MapPin, Navigation, Clock, X } from "lucide-react";
+import { MapPin, Navigation, Clock, X, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -65,7 +65,7 @@ export const RideRequestSheet = ({
                 className={cn(
                     "w-full max-w-md pointer-events-auto",
                     "bg-[#0C0C0C] border-t border-[#1A1A1A]",
-                    "rounded-t-[24px] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))]",
+                    "rounded-t-[24px] p-6 pb-[calc(6rem+env(safe-area-inset-bottom))]",
                     "shadow-2xl relative"
                 )}
             >
@@ -141,14 +141,34 @@ export const RideRequestSheet = ({
                     </div>
                 )}
 
-                {/* Action Button */}
-                <Button
-                    disabled={!externalDestination || !estimatedPrice}
-                    onClick={onOrder}
-                    className="w-full h-14 text-lg font-bold bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Commander un Taxi
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3">
+                    {/* Schedule Button */}
+                    <button
+                        disabled={!externalDestination || !estimatedPrice}
+                        onClick={() => {
+                            // TODO: Open DatePicker modal
+                            alert("Planification de course - À implémenter");
+                        }}
+                        className={cn(
+                            "flex items-center justify-center h-14 w-14 rounded-xl border transition-all",
+                            "bg-[#1A1A1A] border-[#333333] text-white hover:bg-[#252525]",
+                            "disabled:opacity-50 disabled:cursor-not-allowed"
+                        )}
+                        title="Planifier une course"
+                    >
+                        <CalendarClock className="w-6 h-6" />
+                    </button>
+
+                    {/* Order Button */}
+                    <Button
+                        disabled={!externalDestination || !estimatedPrice}
+                        onClick={onOrder}
+                        className="flex-1 h-14 text-lg font-bold bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Commander un Taxi
+                    </Button>
+                </div>
             </motion.div>
         </div>
     );

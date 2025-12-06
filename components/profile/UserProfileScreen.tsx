@@ -14,7 +14,8 @@ import {
     HelpCircle,
     LogOut,
     ChevronRight,
-    CreditCard
+    CreditCard,
+    Car
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -169,6 +170,34 @@ export function UserProfileScreen() {
                         ))}
                     </div>
                 </div>
+
+                {/* Become a Driver CTA */}
+                <Card className="bg-gradient-to-br from-[#0C0C0C] via-[#1A1A1A] to-[#0C0C0C] border-[#333333] overflow-hidden relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent pointer-events-none" />
+                    <CardContent className="p-6 relative">
+                        <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
+                                <Car className="w-6 h-6 text-accent" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-heading font-bold text-foreground mb-1">
+                                    Devenez Chauffeur Kenda
+                                </h3>
+                                <p className="text-sm text-foreground-secondary mb-4 leading-relaxed">
+                                    Gagnez de l&apos;argent en conduisant. Inscription gratuite.
+                                </p>
+                                <Button
+                                    variant="outline"
+                                    className="w-full border-accent text-accent hover:bg-accent/10 h-11 font-bold"
+                                    onClick={() => window.location.href = '/driver-application'}
+                                >
+                                    <Car className="w-4 h-4 mr-2" />
+                                    Postuler maintenant
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Logout Button */}
                 <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-12 mt-4" onClick={() => alert("Fonctionnalité à venir")}>

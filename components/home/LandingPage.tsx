@@ -72,7 +72,7 @@ export function LandingPage() {
                                         <ArrowRight className="ml-2 w-5 h-5" />
                                     </Button>
                                 </Link>
-                                <Link href="/login">
+                                <Link href="/login?role=driver">
                                     <Button variant="outline" className="w-full sm:w-auto h-14 px-8 border-white/20 text-white hover:bg-white/10 rounded-full text-lg font-medium">
                                         Je suis Chauffeur
                                     </Button>

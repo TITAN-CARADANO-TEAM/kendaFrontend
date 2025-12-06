@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
+import { NavigationWrapper } from "@/components/layout/NavigationWrapper";
 
 const inter = Inter({
     subsets: ["latin"],
@@ -19,9 +20,6 @@ export const metadata: Metadata = {
     description: "Decentralized urban mobility platform powered by Cardano blockchain",
 };
 
-import { MobileNavBar } from "@/components/layout/MobileNavBar";
-import { DesktopSidebar } from "@/components/layout/DesktopSidebar";
-
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -30,11 +28,9 @@ export default function RootLayout({
     return (
         <html lang="en" className="dark">
             <body className={`${inter.variable} ${manrope.variable} antialiased h-dvh w-screen overflow-hidden bg-black text-white flex`}>
-                <DesktopSidebar />
-                <div className="flex-1 h-full w-full md:pl-64 transition-all duration-300 relative">
+                <NavigationWrapper>
                     {children}
-                </div>
-                <MobileNavBar />
+                </NavigationWrapper>
             </body>
         </html>
     );
