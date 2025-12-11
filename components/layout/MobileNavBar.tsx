@@ -1,36 +1,37 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/lib/navigation";
 import { Home, Clock, Wallet, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export function MobileNavBar() {
     const pathname = usePathname();
+    const t = useTranslations('Nav');
 
     // Don't show on landing page or login
-    if (pathname === "/" || pathname === "/login") {
+    if (pathname === "/" || pathname === "/login" || pathname.endsWith("/login")) {
         return null;
     }
 
     const navItems = [
         {
-            label: "Accueil",
+            label: t('home'),
             href: "/map",
             icon: Home,
         },
         {
-            label: "Activités",
+            label: t('activities'),
             href: "/rides",
             icon: Clock,
         },
         {
-            label: "Portefeuille",
+            label: t('wallet'),
             href: "/wallet",
             icon: Wallet,
         },
         {
-            label: "Compte",
+            label: t('account'),
             href: "/account",
             icon: User,
         },

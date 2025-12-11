@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "../ui/textarea";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 interface RideRatingProps {
     price: string;
@@ -11,6 +12,7 @@ interface RideRatingProps {
 }
 
 export const RideRatingScreen = ({ price, onComplete }: RideRatingProps) => {
+    const t = useTranslations('Ride');
     const [rating, setRating] = useState<number>(0);
     const [comment, setComment] = useState("");
 
@@ -28,10 +30,10 @@ export const RideRatingScreen = ({ price, onComplete }: RideRatingProps) => {
                         <CheckCircle className="w-10 h-10 text-[#F0B90B]" />
                     </div>
                     <h1 className="font-heading font-bold text-3xl md:text-4xl text-white">
-                        Vous êtes arrivé !
+                        {t('youArrived')}
                     </h1>
                     <p className="text-[#9A9A9A] text-lg">
-                        Merci d&apos;avoir voyagé avec Kenda.
+                        {t('thanksForRiding')}
                     </p>
                 </div>
 
@@ -44,7 +46,7 @@ export const RideRatingScreen = ({ price, onComplete }: RideRatingProps) => {
 
                 {/* Rating Stars */}
                 <div className="flex flex-col items-center space-y-4 w-full">
-                    <p className="text-white font-medium">Comment s&apos;est passé votre trajet ?</p>
+                    <p className="text-white font-medium">{t('howWasRide')}</p>
                     <div className="flex items-center gap-3">
                         {[1, 2, 3, 4, 5].map((star) => (
                             <button
@@ -68,7 +70,7 @@ export const RideRatingScreen = ({ price, onComplete }: RideRatingProps) => {
                 {/* Comment Input */}
                 <div className="w-full space-y-2">
                     <Textarea
-                        placeholder="Laissez un commentaire (optionnel)..."
+                        placeholder={t('leaveComment')}
                         value={comment}
                         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setComment(e.target.value)}
                         className="bg-[#0C0C0C] border-[#1A1A1A] text-white placeholder:text-[#555] min-h-[100px] resize-none rounded-xl focus-visible:ring-[#F0B90B]/50"
@@ -80,7 +82,7 @@ export const RideRatingScreen = ({ price, onComplete }: RideRatingProps) => {
                     onClick={onComplete}
                     className="w-full h-14 text-lg font-bold bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 rounded-xl shadow-lg mt-8"
                 >
-                    Envoyer & Fermer
+                    {t('sendAndClose')}
                 </Button>
             </motion.div>
         </div>

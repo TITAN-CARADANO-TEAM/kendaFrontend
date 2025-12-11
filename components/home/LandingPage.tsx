@@ -1,12 +1,16 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
+import { Link } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Wallet, Scale, ArrowRight, CheckCircle2, MapPin, Smartphone } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { useTranslations } from 'next-intl';
+
 export function LandingPage() {
+    const t = useTranslations('Landing');
+
     return (
         <div className="h-full bg-black text-white overflow-y-auto overflow-x-hidden selection:bg-[#F0B90B] selection:text-black">
             {/* Background Grid Pattern */}
@@ -19,17 +23,17 @@ export function LandingPage() {
                 <div className="container mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex flex-col">
                         <span className="text-2xl font-heading font-bold text-white tracking-tight">KENDA</span>
-                        <span className="text-[10px] text-[#9A9A9A] uppercase tracking-widest font-medium">Mobilité Sûre</span>
+                        <span className="text-[10px] text-[#9A9A9A] uppercase tracking-widest font-medium">{t('headerSubtitle')}</span>
                     </div>
                     <div className="flex items-center gap-4">
                         <Link href="/login">
                             <Button variant="outline" className="hidden sm:flex border-white/20 text-white hover:bg-white hover:text-black rounded-full px-6 transition-all">
-                                S&apos;inscrire
+                                {t('signup')}
                             </Button>
                         </Link>
                         <Link href="/login">
                             <Button className="bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 font-bold rounded-full px-6 shadow-[0_0_20px_rgba(240,185,11,0.3)] transition-all hover:shadow-[0_0_30px_rgba(240,185,11,0.5)]">
-                                Se connecter
+                                {t('login')}
                             </Button>
                         </Link>
                     </div>
@@ -56,25 +60,24 @@ export function LandingPage() {
                             </div>
 
                             <h1 className="text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-[1.1] mb-6">
-                                Goma mérite une mobilité <br />
-                                <span className="text-[#F0B90B]">Sûre</span> et <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">Transparente.</span>
+                                {t('heroTitle1')} <br />
+                                <span className="text-[#F0B90B]">{t('heroTitle2')}</span> {t('and')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">{t('heroTitle3')}</span>
                             </h1>
 
                             <p className="text-lg text-[#9A9A9A] mb-10 leading-relaxed max-w-lg">
-                                La première plateforme de VTC et de gestion de contraventions sécurisée par la Blockchain.
-                                Fini les disputes, fini l&apos;insécurité.
+                                {t('heroDesc')}
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <Link href="/login">
                                     <Button className="w-full sm:w-auto h-14 px-8 bg-[#F0B90B] text-black font-bold text-lg rounded-full hover:bg-[#F0B90B]/90 shadow-lg shadow-[#F0B90B]/20 transition-transform hover:scale-105">
-                                        Commander un trajet
+                                        {t('orderRide')}
                                         <ArrowRight className="ml-2 w-5 h-5" />
                                     </Button>
                                 </Link>
                                 <Link href="/login?role=driver">
                                     <Button variant="outline" className="w-full sm:w-auto h-14 px-8 border-white/20 text-white hover:bg-white/10 rounded-full text-lg font-medium">
-                                        Je suis Chauffeur
+                                        {t('driverBtn')}
                                     </Button>
                                 </Link>
                             </div>
@@ -118,8 +121,8 @@ export function LandingPage() {
                                         <ShieldCheck className="w-5 h-5 text-green-500" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-[#9A9A9A]">Statut</p>
-                                        <p className="text-sm font-bold text-white">Vérifié</p>
+                                        <p className="text-xs text-[#9A9A9A]">{t('statStatus')}</p>
+                                        <p className="text-sm font-bold text-white">{t('statVerified')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -132,28 +135,28 @@ export function LandingPage() {
                     <div className="container mx-auto px-6">
                         <div className="text-center max-w-3xl mx-auto mb-20">
                             <h2 className="text-3xl md:text-4xl font-heading font-bold text-white mb-6">
-                                La technologie au service de la <span className="text-[#F0B90B]">confiance.</span>
+                                {t('featuresTitle')} <span className="text-[#F0B90B]">{t('featuresTrust')}</span>
                             </h2>
                             <p className="text-[#9A9A9A] text-lg">
-                                Nous utilisons la blockchain pour garantir que chaque interaction est sécurisée, transparente et équitable pour tous.
+                                {t('featuresBlockchainDesc')}
                             </p>
                         </div>
 
                         <div className="grid md:grid-cols-3 gap-8">
                             <FeatureCard
                                 icon={<ShieldCheck className="w-8 h-8 text-[#F0B90B]" />}
-                                title="Sécurité Maximale"
-                                description="Chaque chauffeur est vérifié. Votre trajet est suivi en temps réel et partagé avec vos proches."
+                                title={t('feature1Title')}
+                                description={t('feature1Desc')}
                             />
                             <FeatureCard
                                 icon={<Wallet className="w-8 h-8 text-[#F0B90B]" />}
-                                title="Paiement Transparent"
-                                description="Payez via Mobile Money ou Crypto. Plus de problèmes de monnaie ou de surfacturation."
+                                title={t('feature2Title')}
+                                description={t('feature2Desc')}
                             />
                             <FeatureCard
                                 icon={<Scale className="w-8 h-8 text-[#F0B90B]" />}
-                                title="Justice pour tous"
-                                description="Gestion automatisée des contraventions. Payez vos amendes légitimes instantanément, sans corruption."
+                                title={t('feature3Title')}
+                                description={t('feature3Desc')}
                             />
                         </div>
                     </div>
@@ -163,9 +166,9 @@ export function LandingPage() {
                 <section className="py-20 border-y border-[#1A1A1A] bg-black">
                     <div className="container mx-auto px-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center divide-y md:divide-y-0 md:divide-x divide-[#1A1A1A]">
-                            <StatItem value="100%" label="Chauffeurs Vérifiés" />
-                            <StatItem value="0" label="Corruption Tolérée" />
-                            <StatItem value="24/7" label="Support Client" />
+                            <StatItem value="100%" label={t('stat1')} />
+                            <StatItem value="0" label={t('stat2')} />
+                            <StatItem value="24/7" label={t('stat3')} />
                         </div>
                     </div>
                 </section>
@@ -175,12 +178,12 @@ export function LandingPage() {
                     <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex flex-col items-center md:items-start">
                             <span className="text-xl font-heading font-bold text-white">KENDA</span>
-                            <p className="text-sm text-[#666] mt-2">Développé pour le Hackathon Ada Prisma</p>
+                            <p className="text-sm text-[#666] mt-2">{t('footerDev')}</p>
                         </div>
                         <div className="flex gap-8 text-sm text-[#9A9A9A]">
-                            <Link href="#" className="hover:text-white transition-colors" onClick={() => alert("Fonctionnalité à venir")}>À propos</Link>
-                            <Link href="#" className="hover:text-white transition-colors" onClick={() => alert("Fonctionnalité à venir")}>Confidentialité</Link>
-                            <Link href="#" className="hover:text-white transition-colors" onClick={() => alert("Fonctionnalité à venir")}>Contact</Link>
+                            <Link href="#" className="hover:text-white transition-colors" onClick={() => alert("Fonctionnalité à venir")}>{t('footerAbout')}</Link>
+                            <Link href="#" className="hover:text-white transition-colors" onClick={() => alert("Fonctionnalité à venir")}>{t('footerPrivacy')}</Link>
+                            <Link href="#" className="hover:text-white transition-colors" onClick={() => alert("Fonctionnalité à venir")}>{t('footerContact')}</Link>
                         </div>
                         <p className="text-sm text-[#666]">
                             © 2025 KENDA Inc.

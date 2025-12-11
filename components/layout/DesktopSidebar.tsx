@@ -1,37 +1,39 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/lib/navigation";
 import { Home, Clock, Wallet, User, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 export function DesktopSidebar() {
     const pathname = usePathname();
+    const t = useTranslations('Nav');
+    const tCommon = useTranslations('Common');
 
     // Don't show on landing page or login
-    if (pathname === "/" || pathname === "/login") {
+    if (pathname === "/" || pathname === "/login" || pathname.endsWith("/login")) {
         return null;
     }
 
     const navItems = [
         {
-            label: "Accueil",
+            label: t('home'),
             href: "/map",
             icon: Home,
         },
         {
-            label: "Activités",
+            label: t('activities'),
             href: "/rides",
             icon: Clock,
         },
         {
-            label: "Portefeuille",
+            label: t('wallet'),
             href: "/wallet",
             icon: Wallet,
         },
         {
-            label: "Compte",
+            label: t('account'),
             href: "/account",
             icon: User,
         },
@@ -45,7 +47,7 @@ export function DesktopSidebar() {
                     KENDA
                 </h1>
                 <p className="text-[#9A9A9A] text-xs font-medium tracking-wide uppercase mt-1">
-                    Mobilité Sûre
+                    {tCommon('safeMobility')}
                 </p>
             </div>
 
@@ -86,7 +88,7 @@ export function DesktopSidebar() {
                         <p className="text-sm font-bold text-white truncate">Alexandre K.</p>
                         <div className="flex items-center gap-1">
                             <Shield className="w-3 h-3 text-[#F0B90B]" />
-                            <span className="text-[10px] text-[#9A9A9A]">Vérifié</span>
+                            <span className="text-[10px] text-[#9A9A9A]">{t('verified')}</span>
                         </div>
                     </div>
                 </div>
@@ -97,7 +99,7 @@ export function DesktopSidebar() {
                     onClick={() => alert("Fonctionnalité à venir")}
                 >
                     <LogOut className="w-4 h-4 mr-3" />
-                    Déconnexion
+                    {t('logout')}
                 </Button>
             </div>
         </aside>

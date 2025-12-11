@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslations } from "next-intl";
 
 // Fix for default Leaflet markers in Next.js
 const iconUrl = "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png";
@@ -97,6 +98,7 @@ interface MapComponentProps {
 }
 
 const MapComponent = ({ onDestinationChange }: MapComponentProps) => {
+    const t = useTranslations('Ride');
     const [position, setPosition] = useState<[number, number] | null>(null);
     const [destination, setDestination] = useState<[number, number] | null>(null);
     const [taxis, setTaxis] = useState<[number, number][]>([]);
@@ -194,7 +196,7 @@ const MapComponent = ({ onDestinationChange }: MapComponentProps) => {
     if (!position) {
         return (
             <div className="w-full h-full flex items-center justify-center bg-[#0C0C0C] text-white">
-                <p>Locating...</p>
+                <p>{t('locating')}</p>
             </div>
         );
     }
@@ -225,20 +227,20 @@ const MapComponent = ({ onDestinationChange }: MapComponentProps) => {
 
             {/* User Marker */}
             <Marker position={position} icon={createUserIcon()}>
-                <Popup className="custom-popup">You are here</Popup>
+                <Popup className="custom-popup">{t('youAreHere')}</Popup>
             </Marker>
 
             {/* Destination Marker */}
             {destination && (
                 <Marker position={destination} icon={createDestinationIcon()}>
-                    <Popup>Your destination</Popup>
+                    <Popup>{t('yourDestination')}</Popup>
                 </Marker>
             )}
 
             {/* Taxi Markers */}
             {taxis.map((taxiPos, index) => (
                 <Marker key={index} position={taxiPos} icon={createTaxiIcon()}>
-                    <Popup>Taxi #{index + 1} (Available)</Popup>
+                    <Popup>{t('taxiAvailable', { id: index + 1 })}</Popup>
                 </Marker>
             ))}
         </MapContainer>

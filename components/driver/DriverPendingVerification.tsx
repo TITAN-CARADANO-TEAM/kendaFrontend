@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 interface DriverPendingVerificationProps {
     driverName?: string;
@@ -32,6 +33,8 @@ export function DriverPendingVerification({
     onContactSupport,
     onLogout
 }: DriverPendingVerificationProps) {
+    const t = useTranslations('Driver');
+
     const handleRefresh = () => {
         // Simulate API call to check verification status
         window.location.reload();
@@ -40,19 +43,19 @@ export function DriverPendingVerification({
     const verificationSteps = [
         {
             icon: <FileText className="w-4 h-4" />,
-            label: "Vérification des documents",
+            label: t('stepDocuments'),
             status: "in-progress" as const,
-            time: "En cours..."
+            time: t('statusInProgress')
         },
         {
             icon: <User className="w-4 h-4" />,
-            label: "Validation par les autorités",
+            label: t('stepAuthorities'),
             status: "pending" as const,
             time: "12-24h"
         },
         {
             icon: <CheckCircle2 className="w-4 h-4" />,
-            label: "Activation du compte chauffeur",
+            label: t('stepActivation'),
             status: "pending" as const,
             time: "24-48h"
         }
@@ -65,13 +68,13 @@ export function DriverPendingVerification({
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-heading font-bold">KENDA</h1>
-                        <p className="text-xs text-[#9A9A9A] uppercase tracking-widest">Espace Chauffeur</p>
+                        <p className="text-xs text-[#9A9A9A] uppercase tracking-widest">{t('driverSpace')}</p>
                     </div>
                     <button
                         onClick={onLogout}
                         className="text-sm text-[#9A9A9A] hover:text-white transition-colors"
                     >
-                        Se déconnecter
+                        {t('logout', { fallback: 'Déconnexion' })}
                     </button>
                 </div>
             </div>
@@ -100,13 +103,16 @@ export function DriverPendingVerification({
                     {/* Title */}
                     <div className="text-center">
                         <h2 className="text-3xl font-heading font-bold mb-3">
-                            Vérification en cours
+                            {t('pendingVerification')}
                         </h2>
                         <p className="text-[#9A9A9A] leading-relaxed">
-                            Bienvenue, <span className="text-white font-bold">{driverName}</span>
+                            {t.rich('welcome', {
+                                name: driverName,
+                                span: (chunks) => <span className="text-white font-bold">{chunks}</span>
+                            })}
                         </p>
                         <p className="text-[#9A9A9A] leading-relaxed mt-2">
-                            Votre candidature a été soumise avec succès et est actuellement en cours d&apos;analyse.
+                            {t('pendingSubtitle')}
                         </p>
                     </div>
 
@@ -116,7 +122,7 @@ export function DriverPendingVerification({
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
                                     <Clock className="w-4 h-4 text-[#F0B90B]" />
-                                    <span className="text-sm font-bold text-white">Statut de la vérification</span>
+                                    <span className="text-sm font-bold text-white">{t('statusVerification')}</span>
                                 </div>
                                 <button
                                     onClick={handleRefresh}
@@ -140,11 +146,11 @@ export function DriverPendingVerification({
 
                             <div className="pt-4 border-t border-[#1A1A1A] space-y-2">
                                 <div className="flex justify-between text-xs">
-                                    <span className="text-[#666]">Date de soumission:</span>
+                                    <span className="text-[#666]">{t('submissionDate')}:</span>
                                     <span className="text-white">{submittedDate}</span>
                                 </div>
                                 <div className="flex justify-between text-xs">
-                                    <span className="text-[#666]">Finalisation estimée:</span>
+                                    <span className="text-[#666]">{t('estimatedCompletion')}:</span>
                                     <span className="text-[#F0B90B] font-bold">{estimatedCompletionDate}</span>
                                 </div>
                             </div>
@@ -160,11 +166,10 @@ export function DriverPendingVerification({
                                     <Bell className="w-5 h-5 text-[#F0B90B] flex-shrink-0 mt-0.5" />
                                     <div>
                                         <p className="text-sm font-bold text-white mb-1">
-                                            Vous serez notifié
+                                            {t('notificationTitle')}
                                         </p>
                                         <p className="text-xs text-[#9A9A9A] leading-relaxed">
-                                            Vous recevrez un SMS et un email dès que votre compte sera activé.
-                                            Restez connecté pour ne rien manquer !
+                                            {t('notificationDesc')}
                                         </p>
                                     </div>
                                 </div>
@@ -176,20 +181,20 @@ export function DriverPendingVerification({
                             <CardContent className="p-4">
                                 <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                                     <ArrowRight className="w-4 h-4 text-[#F0B90B]" />
-                                    Pendant l&apos;attente
+                                    {t('whileWaiting')}
                                 </h3>
                                 <ul className="space-y-2 text-xs text-[#9A9A9A]">
                                     <li className="flex items-start gap-2">
                                         <span className="text-[#F0B90B] mt-0.5">•</span>
-                                        <span>Assurez-vous que votre véhicule est en bon état</span>
+                                        <span>{t('waitingTip1')}</span>
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <span className="text-[#F0B90B] mt-0.5">•</span>
-                                        <span>Préparez votre espace de travail (chargeur, support GPS)</span>
+                                        <span>{t('waitingTip2')}</span>
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <span className="text-[#F0B90B] mt-0.5">•</span>
-                                        <span>Lisez notre guide du chauffeur partenaire</span>
+                                        <span>{t('waitingTip3')}</span>
                                     </li>
                                 </ul>
                             </CardContent>
@@ -204,11 +209,11 @@ export function DriverPendingVerification({
                             className="w-full h-12 border-[#333333] text-white hover:bg-[#1A1A1A] hover:border-[#F0B90B]"
                         >
                             <Mail className="w-4 h-4 mr-2" />
-                            Contacter le support
+                            {t('contactSupport')}
                         </Button>
 
                         <p className="text-center text-xs text-[#666]">
-                            Délai moyen de vérification : <span className="text-[#F0B90B] font-bold">24-48 heures</span>
+                            {t('averageDelay')} : <span className="text-[#F0B90B] font-bold">{t('hours2448')}</span>
                         </p>
                     </div>
                 </div>

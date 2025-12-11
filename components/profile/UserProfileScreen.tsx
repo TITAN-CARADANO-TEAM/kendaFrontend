@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Link } from "@/lib/navigation";
 import {
     User,
     Shield,
@@ -20,12 +21,17 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
+import { useFormatter } from 'next-intl';
 
-// Mock Data for Ride History
+import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
+
+// NOTE: In a real app, this data should come from an API and be formatted according to locale
 const MOCK_RIDES = [
     {
         id: "1",
-        date: "Aujourd'hui, 08:30",
+        dateKey: "today",
+        time: "08:30",
         from: "Majengo",
         to: "Centre-ville",
         price: "2500 FC",
@@ -34,7 +40,8 @@ const MOCK_RIDES = [
     },
     {
         id: "2",
-        date: "Hier, 18:15",
+        dateKey: "yesterday",
+        time: "18:15",
         from: "Himbi",
         to: "Aéroport Intl. Goma",
         price: "5000 FC",
@@ -43,7 +50,8 @@ const MOCK_RIDES = [
     },
     {
         id: "3",
-        date: "02 Dec, 14:00",
+        dateKey: "02 Dec", // Static date for now
+        time: "14:00",
         from: "Université de Goma",
         to: "Katindo",
         price: "1500 FC",
@@ -53,10 +61,16 @@ const MOCK_RIDES = [
 ];
 
 export function UserProfileScreen() {
+    const t = useTranslations('Profile');
+    const tCommon = useTranslations('Common');
+
     return (
         <div className="h-full overflow-y-auto bg-background text-foreground pb-24">
             {/* Header Section */}
             <div className="relative pt-safe bg-gradient-to-b from-background-secondary to-background border-b border-border">
+                <div className="absolute top-4 right-4 z-10">
+                    <LanguageSwitcher />
+                </div>
                 <div className="flex flex-col items-center pt-8 pb-8 px-4">
                     {/* Avatar & Badge */}
                     <div className="relative mb-4">
@@ -76,23 +90,23 @@ export function UserProfileScreen() {
                     <div className="flex items-center gap-1.5 bg-accent/10 px-3 py-1 rounded-full border border-accent/20 mb-6">
                         <Shield className="w-3 h-3 text-accent fill-current" />
                         <span className="text-[10px] font-bold text-accent uppercase tracking-wide">
-                            Passager Vérifié
+                            {t('verifiedPassenger')}
                         </span>
                     </div>
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
                         <StatBlock
-                            label="Courses"
+                            label={t('statsRides')}
                             value="42"
                         />
                         <StatBlock
-                            label="Note"
+                            label={t('statsRating')}
                             value="4.9"
                             icon={<Star className="w-3 h-3 text-accent fill-current ml-1" />}
                         />
                         <StatBlock
-                            label="Km Total"
+                            label={t('statsTotalKm')}
                             value="128"
                         />
                     </div>
@@ -106,10 +120,10 @@ export function UserProfileScreen() {
                         <div className="flex items-center justify-between p-4 pb-2">
                             <div className="flex items-center gap-2 text-foreground-secondary font-medium text-sm">
                                 <Wallet className="w-4 h-4 text-accent" />
-                                <span>Solde Portefeuille</span>
+                                <span>{t('walletTitle')}</span>
                             </div>
                             <Button variant="ghost" size="sm" className="h-8 text-accent hover:text-accent hover:bg-accent/10 px-2 -mr-2" onClick={() => alert("Fonctionnalité à venir")}>
-                                historique <ChevronRight className="w-4 h-4 ml-1" />
+                                {t('history')} <ChevronRight className="w-4 h-4 ml-1" />
                             </Button>
                         </div>
                         <div className="px-4 pb-4">
@@ -118,7 +132,7 @@ export function UserProfileScreen() {
                             </div>
                             <Button className="w-full h-12 font-bold shadow-lg shadow-accent/20" onClick={() => alert("Fonctionnalité à venir")}>
                                 <CreditCard className="w-4 h-4 mr-2" />
-                                Recharger mon compte
+                                {t('recharge')}
                             </Button>
                         </div>
                     </div>
@@ -127,27 +141,27 @@ export function UserProfileScreen() {
                 {/* Settings & Support Menu */}
                 <div className="space-y-2">
                     <h3 className="text-sm font-bold text-foreground-secondary uppercase tracking-wider px-1">
-                        Compte & Paramètres
+                        {t('menuTitle')}
                     </h3>
                     <div className="bg-background-secondary rounded-xl border border-border overflow-hidden divide-y divide-border/50">
                         <MenuItem
                             icon={<User className="w-5 h-5" />}
-                            label="Informations personnelles"
+                            label={t('personalInfo')}
                             onClick={() => alert("Fonctionnalité à venir")}
                         />
                         <MenuItem
                             icon={<Settings className="w-5 h-5" />}
-                            label="Préférences de l'application"
+                            label={t('appPrefs')}
                             onClick={() => alert("Fonctionnalité à venir")}
                         />
                         <MenuItem
                             icon={<Shield className="w-5 h-5" />}
-                            label="Confidentialité et sécurité"
+                            label={t('privacySecurity')}
                             onClick={() => alert("Fonctionnalité à venir")}
                         />
                         <MenuItem
                             icon={<HelpCircle className="w-5 h-5" />}
-                            label="Aide & Support"
+                            label={t('helpSupport')}
                             onClick={() => alert("Fonctionnalité à venir")}
                         />
                     </div>
@@ -157,17 +171,30 @@ export function UserProfileScreen() {
                 <div className="space-y-3">
                     <div className="flex items-center justify-between px-1">
                         <h3 className="text-sm font-bold text-foreground-secondary uppercase tracking-wider">
-                            Derniers Trajets
+                            {t('recentRidesTitle')}
                         </h3>
                         <Button variant="ghost" size="sm" className="h-auto p-0 text-accent hover:bg-transparent" onClick={() => alert("Fonctionnalité à venir")}>
-                            Tout voir
+                            {t('seeAll')}
                         </Button>
                     </div>
 
                     <div className="space-y-3">
-                        {MOCK_RIDES.map((ride) => (
-                            <RideCard key={ride.id} ride={ride} />
-                        ))}
+                        {MOCK_RIDES.map((ride) => {
+                            let dateLabel = ride.dateKey;
+                            if (ride.dateKey === 'today') dateLabel = tCommon('today');
+                            else if (ride.dateKey === 'yesterday') dateLabel = tCommon('yesterday');
+
+                            const dateString = `${dateLabel}, ${ride.time}`;
+
+                            return (
+                                <RideCard
+                                    key={ride.id}
+                                    ride={ride}
+                                    t={t}
+                                    dateString={dateString}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -181,19 +208,20 @@ export function UserProfileScreen() {
                             </div>
                             <div className="flex-1">
                                 <h3 className="text-lg font-heading font-bold text-foreground mb-1">
-                                    Devenez Chauffeur Kenda
+                                    {t('driverCtaTitle')}
                                 </h3>
                                 <p className="text-sm text-foreground-secondary mb-4 leading-relaxed">
-                                    Gagnez de l&apos;argent en conduisant. Inscription gratuite.
+                                    {t('driverCtaDesc')}
                                 </p>
-                                <Button
-                                    variant="outline"
-                                    className="w-full border-accent text-accent hover:bg-accent/10 h-11 font-bold"
-                                    onClick={() => window.location.href = '/driver-application'}
-                                >
-                                    <Car className="w-4 h-4 mr-2" />
-                                    Postuler maintenant
-                                </Button>
+                                <Link href="/driver-application">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-accent text-accent hover:bg-accent/10 h-11 font-bold"
+                                    >
+                                        <Car className="w-4 h-4 mr-2" />
+                                        {t('driverCtaButton')}
+                                    </Button>
+                                </Link>
                             </div>
                         </div>
                     </CardContent>
@@ -202,12 +230,12 @@ export function UserProfileScreen() {
                 {/* Logout Button */}
                 <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-12 mt-4" onClick={() => alert("Fonctionnalité à venir")}>
                     <LogOut className="w-4 h-4 mr-2" />
-                    Se déconnecter
+                    {t('logout')}
                 </Button>
 
                 <div className="text-center pb-safe">
                     <p className="text-[10px] text-foreground-secondary/50">
-                        Version 1.0.2 • KENDA App
+                        {t('version')} 1.0.2 • KENDA App
                     </p>
                 </div>
             </div>
@@ -246,7 +274,8 @@ function MenuItem({ icon, label, onClick }: { icon: React.ReactNode, label: stri
     );
 }
 
-function RideCard({ ride }: { ride: typeof MOCK_RIDES[0] }) {
+
+function RideCard({ ride, t, dateString }: { ride: any, t: any, dateString: string }) {
     const isCompleted = ride.status === "COMPLETED";
 
     return (
@@ -255,17 +284,17 @@ function RideCard({ ride }: { ride: typeof MOCK_RIDES[0] }) {
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-xs text-foreground-secondary font-medium">
                     <Calendar className="w-3.5 h-3.5" />
-                    <span>{ride.date}</span>
+                    <span>{dateString}</span>
                 </div>
                 {isCompleted ? (
                     <div className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                         <CheckCircle2 className="w-3 h-3" />
-                        <span>TERMINÉ</span>
+                        <span>{t('statusCompleted')}</span>
                     </div>
                 ) : (
                     <div className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
                         <XCircle className="w-3 h-3" />
-                        <span>ANNULÉ</span>
+                        <span>{t('statusCancelled')}</span>
                     </div>
                 )}
             </div>
@@ -279,11 +308,11 @@ function RideCard({ ride }: { ride: typeof MOCK_RIDES[0] }) {
                 </div>
                 <div className="flex-1 flex flex-col gap-3">
                     <div>
-                        <p className="text-xs text-foreground-secondary mb-0.5">De</p>
+                        <p className="text-xs text-foreground-secondary mb-0.5">{t('from')}</p>
                         <p className="text-sm font-bold text-foreground overflow-hidden text-ellipsis whitespace-nowrap">{ride.from}</p>
                     </div>
                     <div>
-                        <p className="text-xs text-foreground-secondary mb-0.5">À</p>
+                        <p className="text-xs text-foreground-secondary mb-0.5">{t('to')}</p>
                         <p className="text-sm font-bold text-foreground overflow-hidden text-ellipsis whitespace-nowrap">{ride.to}</p>
                     </div>
                 </div>

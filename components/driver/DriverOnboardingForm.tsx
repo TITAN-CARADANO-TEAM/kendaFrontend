@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
+import { useRouter, Link } from "@/lib/navigation";
 
 type VehicleType = 'MOTO' | 'TAXI';
 type Step = 1 | 2 | 3 | 4;
@@ -55,6 +57,8 @@ export function DriverOnboardingForm({
     mode = 'NEW_DRIVER',
     onComplete
 }: DriverOnboardingFormProps) {
+    const t = useTranslations('Driver');
+    const router = useRouter();
     const [currentStep, setCurrentStep] = useState<Step>(1);
     const [formData, setFormData] = useState<FormData>({
         vehicleType: null,
@@ -110,7 +114,7 @@ export function DriverOnboardingForm({
                 onComplete();
             } else {
                 // Redirect to pending verification page
-                window.location.href = '/driver-pending';
+                router.push('/driver-pending');
             }
         }, 2000);
     };
@@ -144,12 +148,12 @@ export function DriverOnboardingForm({
                         )}
                         <div>
                             <h1 className="text-xl font-heading font-bold">
-                                {mode === 'EXISTING_USER' ? 'Devenir Chauffeur' : 'Vérification Chauffeur'}
+                                {mode === 'EXISTING_USER' ? t('becomeDriver') : t('driverVerification')}
                             </h1>
                             <p className="text-xs text-[#9A9A9A]">
                                 {shouldShowPending
-                                    ? "Terminé"
-                                    : `Étape ${currentStep} sur ${totalSteps}`
+                                    ? t('statusCompleted') || "Terminé"
+                                    : t('step', { current: currentStep, total: totalSteps })
                                 }
                             </p>
                         </div>
@@ -222,7 +226,7 @@ export function DriverOnboardingForm({
                                     }
                                     className="w-full h-14 bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 font-bold text-lg rounded-xl"
                                 >
-                                    Continuer
+                                    {t('continue')}
                                     <ChevronRight className="w-5 h-5 ml-2" />
                                 </Button>
                             ) : currentStep === 2 && mode === 'NEW_DRIVER' ? (
@@ -231,7 +235,7 @@ export function DriverOnboardingForm({
                                     disabled={!canProceedStep2}
                                     className="w-full h-14 bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 font-bold text-lg rounded-xl"
                                 >
-                                    Continuer
+                                    {t('continue')}
                                     <ChevronRight className="w-5 h-5 ml-2" />
                                 </Button>
                             ) : (
@@ -246,14 +250,14 @@ export function DriverOnboardingForm({
                                     {isSubmitting ? (
                                         <>
                                             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                            Envoi en cours...
+                                            {t('sending')}
                                         </>
                                     ) : (
                                         <>
                                             <ShieldAlert className="w-5 h-5 mr-2" />
                                             {mode === 'EXISTING_USER'
-                                                ? 'Soumettre ma candidature'
-                                                : 'Soumettre pour vérification'
+                                                ? t('submitApplication')
+                                                : t('submitVerification')
                                             }
                                         </>
                                     )}
@@ -274,6 +278,8 @@ function StepVehicleInfo({ formData, onChange, mode }: {
     onChange: (field: keyof FormData, value: string | VehicleType) => void;
     mode: OnboardingMode;
 }) {
+    const t = useTranslations('Driver');
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -286,15 +292,15 @@ function StepVehicleInfo({ formData, onChange, mode }: {
                     <Car className="w-6 h-6 text-[#F0B90B]" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-heading font-bold">Votre Véhicule</h2>
-                    <p className="text-sm text-[#9A9A9A]">Informations de votre moyen de transport</p>
+                    <h2 className="text-2xl font-heading font-bold">{t('yourVehicle')}</h2>
+                    <p className="text-sm text-[#9A9A9A]">{t('vehicleDesc')}</p>
                 </div>
             </div>
 
             {/* Vehicle Type Selector */}
             <div>
                 <label className="text-sm font-bold text-white mb-3 block">
-                    Type de véhicule
+                    {t('vehicleType')}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                     <button
@@ -308,7 +314,7 @@ function StepVehicleInfo({ formData, onChange, mode }: {
                         )}
                     >
                         <Bike className="w-8 h-8" />
-                        <span className="font-bold text-sm">Moto-Taxi</span>
+                        <span className="font-bold text-sm">{t('motoTaxi')}</span>
                     </button>
                     <button
                         type="button"
@@ -321,7 +327,7 @@ function StepVehicleInfo({ formData, onChange, mode }: {
                         )}
                     >
                         <Car className="w-8 h-8" />
-                        <span className="font-bold text-sm">Taxi Voiture</span>
+                        <span className="font-bold text-sm">{t('carTaxi')}</span>
                     </button>
                 </div>
             </div>
@@ -330,7 +336,7 @@ function StepVehicleInfo({ formData, onChange, mode }: {
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="text-sm font-medium text-[#9A9A9A] mb-2 block">
-                        Marque
+                        {t('brand')}
                     </label>
                     <Input
                         placeholder="Toyota, Honda..."
@@ -341,7 +347,7 @@ function StepVehicleInfo({ formData, onChange, mode }: {
                 </div>
                 <div>
                     <label className="text-sm font-medium text-[#9A9A9A] mb-2 block">
-                        Modèle
+                        {t('model')}
                     </label>
                     <Input
                         placeholder="Corolla, Civic..."
@@ -355,7 +361,7 @@ function StepVehicleInfo({ formData, onChange, mode }: {
             {/* License Plate */}
             <div>
                 <label className="text-sm font-medium text-[#9A9A9A] mb-2 block">
-                    Plaque d&apos;immatriculation
+                    {t('plateNumber')}
                 </label>
                 <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9A9A9A]" />
@@ -371,7 +377,7 @@ function StepVehicleInfo({ formData, onChange, mode }: {
             {/* Color */}
             <div>
                 <label className="text-sm font-medium text-[#9A9A9A] mb-2 block">
-                    Couleur du véhicule
+                    {t('color')}
                 </label>
                 <div className="relative">
                     <Palette className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9A9A9A]" />
@@ -388,7 +394,7 @@ function StepVehicleInfo({ formData, onChange, mode }: {
             {mode === 'EXISTING_USER' && (
                 <div>
                     <label className="text-sm font-medium text-[#9A9A9A] mb-2 block">
-                        Ville d&apos;opération
+                        {t('city')}
                     </label>
                     <div className="relative">
                         <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9A9A9A] pointer-events-none" />
@@ -398,7 +404,7 @@ function StepVehicleInfo({ formData, onChange, mode }: {
                             className="h-12 w-full pl-12 pr-4 bg-[#0C0C0C] border border-[#1A1A1A] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F0B90B]/50 appearance-none cursor-pointer"
                         >
                             <option value="" disabled className="bg-[#0C0C0C] text-[#666]">
-                                Sélectionnez une ville
+                                {t('selectCity')}
                             </option>
                             <option value="goma" className="bg-[#0C0C0C]">Goma</option>
                             <option value="bukavu" className="bg-[#0C0C0C]">Bukavu</option>
@@ -417,6 +423,8 @@ function StepDocuments({ formData, onFileChange, mode }: {
     onFileChange: (field: keyof FormData, file: File | null) => void;
     mode: OnboardingMode;
 }) {
+    const t = useTranslations('Driver');
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -429,27 +437,27 @@ function StepDocuments({ formData, onFileChange, mode }: {
                     <FileText className="w-6 h-6 text-[#F0B90B]" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-heading font-bold">Documents Requis</h2>
-                    <p className="text-sm text-[#9A9A9A]">Pièces justificatives officielles</p>
+                    <h2 className="text-2xl font-heading font-bold">{t('requiredDocs')}</h2>
+                    <p className="text-sm text-[#9A9A9A]">{t('docsDesc')}</p>
                 </div>
             </div>
 
             <DocumentUpload
-                label="Permis de Conduire (Recto)"
+                label={t('drivingLicenseFront')}
                 required
                 file={formData.driverLicenseFront}
                 onFileChange={(file) => onFileChange('driverLicenseFront', file)}
             />
 
             <DocumentUpload
-                label="Permis de Conduire (Verso)"
+                label={t('drivingLicenseBack')}
                 required
                 file={formData.driverLicenseBack}
                 onFileChange={(file) => onFileChange('driverLicenseBack', file)}
             />
 
             <DocumentUpload
-                label="Carte Rose (Preuve de propriété)"
+                label={t('carRegistration')}
                 required
                 file={formData.carRegistration}
                 onFileChange={(file) => onFileChange('carRegistration', file)}
@@ -457,7 +465,7 @@ function StepDocuments({ formData, onFileChange, mode }: {
 
             {mode === 'EXISTING_USER' && (
                 <DocumentUpload
-                    label="Photo d'identité récente"
+                    label={t('idPhoto')}
                     required
                     file={formData.insurance}
                     onFileChange={(file) => onFileChange('insurance', file)}
@@ -466,7 +474,7 @@ function StepDocuments({ formData, onFileChange, mode }: {
 
             {mode === 'NEW_DRIVER' && (
                 <DocumentUpload
-                    label="Assurance (Optionnel)"
+                    label={t('insurance')}
                     required={false}
                     file={formData.insurance}
                     onFileChange={(file) => onFileChange('insurance', file)}
@@ -478,8 +486,7 @@ function StepDocuments({ formData, onFileChange, mode }: {
                     <div className="flex items-start gap-3">
                         <ShieldAlert className="w-5 h-5 text-[#F0B90B] flex-shrink-0 mt-0.5" />
                         <p className="text-xs text-[#9A9A9A] leading-relaxed">
-                            Vos documents seront vérifiés par nos équipes et les autorités locales.
-                            Une identité décentralisée (DID) sera créée sur la blockchain Cardano.
+                            {t('driverNotice', { fallback: 'Vos documents seront vérifiés par nos équipes et les autorités locales.' })}
                         </p>
                     </div>
                 </CardContent>
@@ -494,6 +501,8 @@ function DocumentUpload({ label, required, file, onFileChange }: {
     file: File | null;
     onFileChange: (file: File | null) => void;
 }) {
+    const t = useTranslations('Driver');
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0] || null;
         onFileChange(selectedFile);
@@ -529,7 +538,7 @@ function DocumentUpload({ label, required, file, onFileChange }: {
                 ) : (
                     <div className="flex flex-col items-center gap-2">
                         <Upload className="w-8 h-8 text-[#9A9A9A]" />
-                        <span className="text-sm text-[#9A9A9A]">Cliquez pour télécharger</span>
+                        <span className="text-sm text-[#9A9A9A]">{t('clickToUpload')}</span>
                     </div>
                 )}
             </label>
@@ -541,6 +550,8 @@ function StepSelfie({ formData, onFileChange }: {
     formData: FormData;
     onFileChange: (field: keyof FormData, file: File | null) => void;
 }) {
+    const t = useTranslations('Driver');
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0] || null;
         onFileChange('selfie', selectedFile);
@@ -558,8 +569,8 @@ function StepSelfie({ formData, onFileChange }: {
                     <Camera className="w-6 h-6 text-[#F0B90B]" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-heading font-bold">Photo de Sécurité</h2>
-                    <p className="text-sm text-[#9A9A9A]">Vérification de votre identité</p>
+                    <h2 className="text-2xl font-heading font-bold">{t('securityPhoto')}</h2>
+                    <p className="text-sm text-[#9A9A9A]">{t('securityPhotoDesc')}</p>
                 </div>
             </div>
 
@@ -585,7 +596,7 @@ function StepSelfie({ formData, onFileChange }: {
                         <div className="flex flex-col items-center gap-4 p-6">
                             <CheckCircle2 className="w-16 h-16 text-[#F0B90B]" />
                             <div className="text-center">
-                                <p className="text-lg font-bold text-white mb-1">Photo capturée ✓</p>
+                                <p className="text-lg font-bold text-white mb-1">{t('photoCaptured')} ✓</p>
                                 <p className="text-sm text-[#9A9A9A]">{formData.selfie.name}</p>
                             </div>
                             <Button
@@ -597,7 +608,7 @@ function StepSelfie({ formData, onFileChange }: {
                                     onFileChange('selfie', null);
                                 }}
                             >
-                                Reprendre la photo
+                                {t('retakePhoto')}
                             </Button>
                         </div>
                     ) : (
@@ -613,10 +624,10 @@ function StepSelfie({ formData, onFileChange }: {
                                 </div>
                                 <div className="text-center px-6">
                                     <p className="text-lg font-bold text-white mb-2">
-                                        Prenez un selfie
+                                        {t('takeSelfie')}
                                     </p>
                                     <p className="text-sm text-[#9A9A9A] leading-relaxed">
-                                        Positionnez votre visage dans le cadre ovale et cliquez pour capturer
+                                        {t('selfieDesc')}
                                     </p>
                                 </div>
                             </div>
@@ -645,6 +656,8 @@ function StepSelfie({ formData, onFileChange }: {
 }
 
 function StepValidation({ formData }: { formData: FormData }) {
+    const t = useTranslations('Driver');
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -657,8 +670,8 @@ function StepValidation({ formData }: { formData: FormData }) {
                     <CheckCircle2 className="w-6 h-6 text-[#F0B90B]" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-heading font-bold">Vérification Finale</h2>
-                    <p className="text-sm text-[#9A9A9A]">Vérifiez vos informations</p>
+                    <h2 className="text-2xl font-heading font-bold">{t('finalVerification')}</h2>
+                    <p className="text-sm text-[#9A9A9A]">{t('verifyInfo')}</p>
                 </div>
             </div>
 
@@ -666,29 +679,29 @@ function StepValidation({ formData }: { formData: FormData }) {
             <Card className="bg-[#0C0C0C] border-[#1A1A1A]">
                 <CardContent className="p-4">
                     <h3 className="text-sm font-bold text-[#F0B90B] mb-3 uppercase tracking-wide">
-                        Informations Véhicule
+                        {t('vehicleInfo')}
                     </h3>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-[#9A9A9A]">Type:</span>
+                            <span className="text-[#9A9A9A]">{t('vehicleType')}:</span>
                             <span className="text-white font-medium">
-                                {formData.vehicleType === 'MOTO' ? 'Moto-Taxi' : 'Taxi Voiture'}
+                                {formData.vehicleType === 'MOTO' ? t('motoTaxi') : t('carTaxi')}
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-[#9A9A9A]">Marque:</span>
+                            <span className="text-[#9A9A9A]">{t('brand')}:</span>
                             <span className="text-white font-medium">{formData.brand}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-[#9A9A9A]">Modèle:</span>
+                            <span className="text-[#9A9A9A]">{t('model')}:</span>
                             <span className="text-white font-medium">{formData.model}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-[#9A9A9A]">Plaque:</span>
+                            <span className="text-[#9A9A9A]">{t('plateNumber')}:</span>
                             <span className="text-white font-medium font-mono">{formData.licensePlate}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-[#9A9A9A]">Couleur:</span>
+                            <span className="text-[#9A9A9A]">{t('color')}:</span>
                             <span className="text-white font-medium">{formData.color}</span>
                         </div>
                     </div>
@@ -699,13 +712,13 @@ function StepValidation({ formData }: { formData: FormData }) {
             <Card className="bg-[#0C0C0C] border-[#1A1A1A]">
                 <CardContent className="p-4">
                     <h3 className="text-sm font-bold text-[#F0B90B] mb-3 uppercase tracking-wide">
-                        Documents Fournis
+                        {t('documentsProvided')}
                     </h3>
                     <div className="space-y-2">
-                        <DocumentCheck label="Permis de conduire (Recto)" uploaded={!!formData.driverLicenseFront} />
-                        <DocumentCheck label="Permis de conduire (Verso)" uploaded={!!formData.driverLicenseBack} />
-                        <DocumentCheck label="Carte Rose" uploaded={!!formData.carRegistration} />
-                        <DocumentCheck label="Photo d'identité" uploaded={!!formData.insurance} />
+                        <DocumentCheck label={t('drivingLicenseFront')} uploaded={!!formData.driverLicenseFront} />
+                        <DocumentCheck label={t('drivingLicenseBack')} uploaded={!!formData.driverLicenseBack} />
+                        <DocumentCheck label={t('carRegistration')} uploaded={!!formData.carRegistration} />
+                        <DocumentCheck label={t('idPhoto')} uploaded={!!formData.insurance} />
                     </div>
                 </CardContent>
             </Card>
@@ -715,8 +728,7 @@ function StepValidation({ formData }: { formData: FormData }) {
                     <div className="flex items-start gap-3">
                         <ShieldAlert className="w-5 h-5 text-[#F0B90B] flex-shrink-0 mt-0.5" />
                         <div className="text-xs text-[#9A9A9A] leading-relaxed">
-                            En soumettant cette candidature, vous accept que vos documents soient vérifiés
-                            par nos équipes et les autorités compétentes.
+                            {t('driverNotice', { fallback: 'En soumettant cette candidature, vous acceptez que vos documents soient vérifiés.' })}
                         </div>
                     </div>
                 </CardContent>
@@ -738,6 +750,8 @@ function DocumentCheck({ label, uploaded }: { label: string; uploaded: boolean }
 }
 
 function StepPending() {
+    const t = useTranslations('Driver');
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -753,46 +767,48 @@ function StepPending() {
             </div>
 
             <h2 className="text-3xl font-heading font-bold mb-4">
-                Vérification en cours
+                {t('pendingVerification')}
             </h2>
 
             <p className="text-[#9A9A9A] leading-relaxed mb-8 max-w-md">
-                Vos documents sont en cours d&apos;analyse par nos services et la police locale.
-                Vous recevrez une notification dès que votre compte sera activé.
+                {t('pendingSubtitle')}
+                <br />
+                {t('notificationDesc')}
             </p>
 
             <Card className="bg-[#0C0C0C] border-[#1A1A1A] text-left max-w-md w-full mb-8">
                 <CardContent className="p-6">
                     <h3 className="text-sm font-bold text-[#F0B90B] mb-4 uppercase tracking-wide">
-                        Prochaines étapes
+                        {t('statusVerification')}
                     </h3>
                     <div className="space-y-3">
                         <TimelineItem
                             icon={<FileText className="w-4 h-4" />}
-                            text="Vérification des documents"
-                            time="En cours..."
+                            text={t('stepDocuments')}
+                            time={t('statusInProgress')}
                             active
                         />
                         <TimelineItem
                             icon={<User className="w-4 h-4" />}
-                            text="Validation par les autorités"
+                            text={t('stepAuthorities')}
                             time="12-24h"
                         />
                         <TimelineItem
                             icon={<CheckCircle2 className="w-4 h-4" />}
-                            text="Activation du compte chauffeur"
+                            text={t('stepActivation')}
                             time="24-48h"
                         />
                     </div>
                 </CardContent>
             </Card>
 
-            <Button
-                onClick={() => window.location.href = '/'}
-                className="w-full max-w-md h-14 bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 font-bold text-lg rounded-xl"
-            >
-                Revenir à l&apos;accueil
-            </Button>
+            <Link href="/">
+                <Button
+                    className="w-full max-w-md h-14 bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 font-bold text-lg rounded-xl"
+                >
+                    {t('backToHome')}
+                </Button>
+            </Link>
         </motion.div>
     );
 }

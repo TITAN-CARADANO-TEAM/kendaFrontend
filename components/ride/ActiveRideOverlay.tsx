@@ -2,6 +2,7 @@ import React from "react";
 import { Share2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface ActiveRideOverlayProps {
     remainingTime: string; // e.g., "12 min"
@@ -16,6 +17,8 @@ export const ActiveRideOverlay = ({
     arrivalTime,
     className,
 }: ActiveRideOverlayProps) => {
+    const t = useTranslations('Ride');
+
     return (
         <div
             className={cn(
@@ -29,7 +32,7 @@ export const ActiveRideOverlay = ({
                 <div className="flex items-start justify-between">
                     <div className="flex flex-col">
                         <span className="text-[#9A9A9A] text-sm font-medium font-sans mb-1">
-                            Arrivée estimée
+                            {t('estimatedArrival')}
                         </span>
                         <div className="flex items-baseline gap-2">
                             <span className="text-4xl font-bold text-white font-heading">
@@ -40,7 +43,7 @@ export const ActiveRideOverlay = ({
                             </span>
                         </div>
                         <span className="text-[#F0B90B] text-sm font-medium mt-1">
-                            Arrivée à {arrivalTime}
+                            {t('arrivingAt', { time: arrivalTime })}
                         </span>
                     </div>
 

@@ -6,6 +6,7 @@ import { MapPin, Navigation, Clock, X, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface RideRequestSheetProps {
     isOpen?: boolean;
@@ -22,6 +23,7 @@ export const RideRequestSheet = ({
     distance: externalDistance = 0,
     onOrder
 }: RideRequestSheetProps) => {
+    const t = useTranslations('Ride');
     const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
     const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
 
@@ -82,7 +84,7 @@ export const RideRequestSheet = ({
 
                 {/* Title */}
                 <h2 className="text-2xl font-heading font-bold text-white mb-6">
-                    Commander une course
+                    {t('orderRide')}
                 </h2>
 
                 {/* Inputs Section */}
@@ -93,7 +95,7 @@ export const RideRequestSheet = ({
                             <Navigation className="w-5 h-5 fill-current" />
                         </div>
                         <Input
-                            defaultValue="Ma position actuelle"
+                            defaultValue={t('currentPosition')}
                             className="pl-12 bg-[#151515] border-[#1A1A1A] text-white placeholder:text-[#9A9A9A] focus-visible:ring-[#F0B90B]/50"
                             readOnly
                         />
@@ -107,11 +109,11 @@ export const RideRequestSheet = ({
                         <div className="pl-12 pr-4 h-11 bg-[#151515] border border-[#1A1A1A] text-white rounded-button flex items-center">
                             {externalDestination ? (
                                 <span className="text-sm">
-                                    Destination sélectionnée ({externalDistance.toFixed(2)} km)
+                                    {t('destinationSelected', { distance: externalDistance.toFixed(2) })}
                                 </span>
                             ) : (
                                 <span className="text-[#9A9A9A] text-sm">
-                                    Cliquez sur la carte pour choisir la destination
+                                    {t('selectDestination')}
                                 </span>
                             )}
                         </div>
@@ -122,7 +124,7 @@ export const RideRequestSheet = ({
                 {estimatedPrice && estimatedTime ? (
                     <div className="flex items-center justify-between mb-8 px-1">
                         <div className="flex flex-col">
-                            <span className="text-[#9A9A9A] text-sm font-medium mb-1">Prix estimé</span>
+                            <span className="text-[#9A9A9A] text-sm font-medium mb-1">{t('estimatedPrice')}</span>
                             <span className="text-3xl font-bold text-white font-heading">
                                 {estimatedPrice.toLocaleString()} FC
                             </span>
@@ -136,7 +138,7 @@ export const RideRequestSheet = ({
                 ) : (
                     <div className="mb-8 px-1 py-4 text-center">
                         <span className="text-[#9A9A9A] text-sm">
-                            Entrez une destination pour voir l&apos;estimation du prix
+                            {t('enterDestination')}
                         </span>
                     </div>
                 )}
@@ -148,14 +150,14 @@ export const RideRequestSheet = ({
                         disabled={!externalDestination || !estimatedPrice}
                         onClick={() => {
                             // TODO: Open DatePicker modal
-                            alert("Planification de course - À implémenter");
+                            alert(t('scheduleRide'));
                         }}
                         className={cn(
                             "flex items-center justify-center h-14 w-14 rounded-xl border transition-all",
                             "bg-[#1A1A1A] border-[#333333] text-white hover:bg-[#252525]",
                             "disabled:opacity-50 disabled:cursor-not-allowed"
                         )}
-                        title="Planifier une course"
+                        title={t('scheduleRide')}
                     >
                         <CalendarClock className="w-6 h-6" />
                     </button>
@@ -166,7 +168,7 @@ export const RideRequestSheet = ({
                         onClick={onOrder}
                         className="flex-1 h-14 text-lg font-bold bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Commander un Taxi
+                        {t('orderTaxi')}
                     </Button>
                 </div>
             </motion.div>

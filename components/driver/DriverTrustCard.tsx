@@ -2,6 +2,7 @@ import React from "react";
 import { BadgeCheck, Star, ShieldCheck, Lock } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface DriverTrustCardProps {
     driverName: string;
@@ -22,6 +23,8 @@ export const DriverTrustCard = ({
     rating,
     className,
 }: DriverTrustCardProps) => {
+    const t = useTranslations('Driver');
+
     return (
         <div
             className={cn(
@@ -59,7 +62,7 @@ export const DriverTrustCard = ({
                             <div className="flex items-center gap-1 bg-[#F0B90B]/10 px-2 py-0.5 rounded-full border border-[#F0B90B]/20">
                                 <BadgeCheck className="w-3 h-3 text-[#F0B90B]" />
                                 <span className="text-[10px] font-bold text-[#F0B90B] uppercase tracking-wide">
-                                    Vérifié
+                                    {t('verified')}
                                 </span>
                             </div>
                         )}
@@ -92,7 +95,7 @@ export const DriverTrustCard = ({
             <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-[#1A1A1A]/50">
                 <Lock className="w-3 h-3 text-[#0033AD]" />
                 <span className="text-[10px] font-medium text-[#9A9A9A]">
-                    Sécurisé par <span className="text-[#0033AD] font-bold">Cardano</span>
+                    {t('securedBy')} <span className="text-[#0033AD] font-bold">Cardano</span>
                 </span>
             </div>
         </div>

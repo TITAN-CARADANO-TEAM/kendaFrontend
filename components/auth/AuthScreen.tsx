@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/lib/navigation";
 
 type UserRole = 'PASSENGER' | 'DRIVER';
 
@@ -15,6 +17,8 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthScreenProps) {
+    const t = useTranslations('Auth');
+    const router = useRouter();
     const [mode, setMode] = useState<'LOGIN' | 'SIGNUP'>('LOGIN');
     const [role, setRole] = useState<UserRole>(defaultRole);
     const [isLoading, setIsLoading] = useState(false);
@@ -31,11 +35,20 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
             if (onAuthenticated) {
                 onAuthenticated(role);
             } else {
-                // Default behavior based on role
-                if (role === 'DRIVER' && mode === 'SIGNUP') {
-                    window.location.href = '/driver-application';
+                // Default behavior based on role - using locale-aware router
+                if (role === 'DRIVER') {
+                    if (mode === 'SIGNUP') {
+                        // New driver registration - go to application form
+                        router.push('/driver-application');
+                    } else {
+                        // Existing driver login - go to driver dashboard
+                        // In a real app, you would check if the driver is verified
+                        // and redirect to driver-pending if not verified yet
+                        router.push('/driver-dashboard');
+                    }
                 } else {
-                    window.location.href = '/map';
+                    // Passenger - go to map
+                    router.push('/map');
                 }
             }
         }, 1500);
@@ -50,7 +63,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                         KENDA
                     </h1>
                     <p className="text-[#9A9A9A] text-sm font-medium tracking-wide uppercase">
-                        Mobilité Sûre
+                        {t('headerSubtitle')}
                     </p>
                 </div>
 
@@ -63,7 +76,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                             mode === 'LOGIN' ? "text-white" : "text-[#9A9A9A]"
                         )}
                     >
-                        Connexion
+                        {t('loginTab')}
                         {mode === 'LOGIN' && (
                             <motion.div
                                 layoutId="activeTab"
@@ -78,7 +91,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                             mode === 'SIGNUP' ? "text-white" : "text-[#9A9A9A]"
                         )}
                     >
-                        Inscription
+                        {t('signupTab')}
                         {mode === 'SIGNUP' && (
                             <motion.div
                                 layoutId="activeTab"
@@ -103,7 +116,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                             {mode === 'SIGNUP' && (
                                 <div className="mb-2">
                                     <label className="text-xs font-bold text-[#9A9A9A] uppercase tracking-wider mb-2 block">
-                                        Je m&apos;inscris en tant que
+                                        {t('registerAs')}
                                     </label>
                                     <div className="flex items-center gap-2 bg-[#1A1A1A] p-1 rounded-lg">
                                         <button
@@ -117,7 +130,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                             )}
                                         >
                                             <User className="w-4 h-4" />
-                                            Passager
+                                            {t('passenger')}
                                         </button>
                                         <button
                                             type="button"
@@ -130,7 +143,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                             )}
                                         >
                                             <Car className="w-4 h-4" />
-                                            Chauffeur
+                                            {t('driver')}
                                         </button>
                                     </div>
 
@@ -143,7 +156,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                         >
                                             <Shield className="w-4 h-4 text-[#F0B90B]" />
                                             <span className="text-xs text-[#F0B90B] font-bold">
-                                                Espace Partenaire Professionnel
+                                                {t('proSpace')}
                                             </span>
                                         </motion.div>
                                     )}
@@ -156,7 +169,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                         <User className="w-5 h-5" />
                                     </div>
                                     <Input
-                                        placeholder="Nom complet"
+                                        placeholder={t('fullName')}
                                         className="h-14 pl-12 bg-[#0C0C0C] md:bg-black border-[#1A1A1A] text-white placeholder:text-[#666] focus-visible:ring-[#F0B90B]/50 rounded-xl"
                                         required
                                     />
@@ -169,7 +182,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                 </div>
                                 <Input
                                     type="text"
-                                    placeholder="Email ou Téléphone"
+                                    placeholder={t('emailPhone')}
                                     className="h-14 pl-12 bg-[#0C0C0C] md:bg-black border-[#1A1A1A] text-white placeholder:text-[#666] focus-visible:ring-[#F0B90B]/50 rounded-xl"
                                     required
                                 />
@@ -181,7 +194,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                 </div>
                                 <Input
                                     type={showPassword ? "text" : "password"}
-                                    placeholder="Mot de passe"
+                                    placeholder={t('password')}
                                     className="h-14 pl-12 pr-12 bg-[#0C0C0C] md:bg-black border-[#1A1A1A] text-white placeholder:text-[#666] focus-visible:ring-[#F0B90B]/50 rounded-xl"
                                     required
                                 />
@@ -201,7 +214,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                     </div>
                                     <Input
                                         type="password"
-                                        placeholder="Confirmer mot de passe"
+                                        placeholder={t('confirmPassword')}
                                         className="h-14 pl-12 bg-[#0C0C0C] md:bg-black border-[#1A1A1A] text-white placeholder:text-[#666] focus-visible:ring-[#F0B90B]/50 rounded-xl"
                                         required
                                     />
@@ -226,7 +239,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                         required
                                     >
                                         <option value="" disabled className="bg-[#0C0C0C] text-[#666]">
-                                            Ville d&apos;opération
+                                            {t('cityPlaceholder')}
                                         </option>
                                         <option value="goma" className="bg-[#0C0C0C]">Goma</option>
                                         <option value="bukavu" className="bg-[#0C0C0C]">Bukavu</option>
@@ -248,10 +261,10 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                 <Loader2 className="w-6 h-6 animate-spin" />
                             ) : (
                                 mode === 'LOGIN'
-                                    ? "Se connecter"
+                                    ? t('loginAction')
                                     : role === 'DRIVER'
-                                        ? "Commencer ma candidature"
-                                        : "Créer mon compte"
+                                        ? t('startApplication')
+                                        : t('createAccount')
                             )}
                         </Button>
 
@@ -263,7 +276,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                 className="mt-3 text-xs text-center text-[#9A9A9A] leading-relaxed"
                             >
                                 <Car className="w-3 h-3 inline mr-1" />
-                                L&apos;inscription chauffeur nécessite la validation de vos documents.
+                                {t('driverNotice')}
                             </motion.p>
                         )}
 
@@ -272,7 +285,7 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                                 type="button"
                                 className="w-full mt-4 text-sm text-[#9A9A9A] hover:text-white underline decoration-[#9A9A9A] underline-offset-4"
                             >
-                                Mot de passe oublié ?
+                                {t('forgotPassword')}
                             </button>
                         )}
                     </div>

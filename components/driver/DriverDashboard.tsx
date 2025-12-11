@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 interface DriverDashboardProps {
     driverName?: string;
@@ -27,6 +28,7 @@ export function DriverDashboard({
     driverName = "Alexandre K.",
     driverAvatar
 }: DriverDashboardProps) {
+    const t = useTranslations('Driver');
     const [isOnline, setIsOnline] = useState(false);
     const [showBottomSheet, setShowBottomSheet] = useState(true);
 
@@ -155,7 +157,7 @@ export function DriverDashboard({
                         )}
                     >
                         <Power className={cn("w-6 h-6", isOnline && "animate-pulse")} />
-                        {isOnline ? "EN LIGNE - Prêt à recevoir" : "HORS LIGNE - Appuyer pour activer"}
+                        {isOnline ? t('online') : t('offline')}
                     </button>
                 </div>
 
@@ -165,7 +167,7 @@ export function DriverDashboard({
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm font-medium text-[#9A9A9A] uppercase tracking-wide">
-                                    Gains du jour
+                                    {t('todayEarnings')}
                                 </span>
                                 <TrendingUp className="w-5 h-5 text-green-500" />
                             </div>
@@ -210,7 +212,7 @@ export function DriverDashboard({
                                 {/* Section Title */}
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-lg font-heading font-bold text-white">
-                                        Dernière Course
+                                        {t('lastRide')}
                                     </h3>
                                     <span className="text-xs text-[#9A9A9A] flex items-center gap-1">
                                         <Clock className="w-3 h-3" />
@@ -259,10 +261,10 @@ export function DriverDashboard({
                                 {/* Bonus Info (Optional) */}
                                 <div className="mt-4 p-3 bg-gradient-to-r from-[#F0B90B]/10 to-transparent border-l-4 border-[#F0B90B] rounded">
                                     <p className="text-xs text-[#F0B90B] font-bold mb-1">
-                                        💡 Bonus Disponible
+                                        💡 {t('bonusAvailable')}
                                     </p>
                                     <p className="text-xs text-[#9A9A9A]">
-                                        Complétez 2 courses de plus pour débloquer un bonus de 5.000 FC
+                                        {t('bonusDesc')}
                                     </p>
                                 </div>
                             </div>
@@ -290,9 +292,9 @@ export function DriverDashboard({
                         <div className="w-20 h-20 rounded-full bg-[#1A1A1A] border-2 border-[#333333] flex items-center justify-center mx-auto mb-4">
                             <Power className="w-10 h-10 text-[#666]" />
                         </div>
-                        <p className="text-xl font-bold text-[#666] mb-2">Mode Hors Ligne</p>
+                        <p className="text-xl font-bold text-[#666] mb-2">{t('offlineMode')}</p>
                         <p className="text-sm text-[#444]">
-                            Activez le mode En Ligne pour recevoir des demandes de course
+                            {t('offlineDesc')}
                         </p>
                     </div>
                 </div>

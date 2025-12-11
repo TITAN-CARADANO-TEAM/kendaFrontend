@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import { NavigationWrapper } from "@/components/layout/NavigationWrapper";
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
 
 const inter = Inter({
     subsets: ["latin"],
@@ -136,13 +138,19 @@ export const metadata: Metadata = {
     },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
-}: Readonly<{
+    params: { locale }
+}: {
     children: React.ReactNode;
-}>) {
+    params: { locale: string };
+}) {
+    // Providing all messages to the client
+    // side is the easiest way to get started
+    const messages = await getMessages();
+
     return (
-        <html lang="fr" dir="ltr">
+        <html lang={locale} dir="ltr">
             <head>
                 {/* Structured Data - Organization */}
                 <script
@@ -272,9 +280,11 @@ export default function RootLayout({
                 <meta name="ICBM" content="-1.6792, 29.2232" />
             </head>
             <body className={`${inter.variable} ${manrope.variable} antialiased h-dvh w-screen overflow-hidden bg-black text-white flex`}>
-                <NavigationWrapper>
-                    {children}
-                </NavigationWrapper>
+                <NextIntlClientProvider messages={messages}>
+                    <NavigationWrapper>
+                        {children}
+                    </NavigationWrapper>
+                </NextIntlClientProvider>
             </body>
         </html>
     );

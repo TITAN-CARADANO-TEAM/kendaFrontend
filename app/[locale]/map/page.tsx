@@ -10,6 +10,8 @@ import { ActiveRideOverlay } from "@/components/ride/ActiveRideOverlay";
 import { RideRatingScreen } from "@/components/ride/RideRatingScreen";
 import { SafetyToolkit } from "@/components/ride/SafetyToolkit";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "@/lib/navigation";
+import { useTranslations } from "next-intl";
 
 // Dynamic import with SSR disabled to avoid "window is not defined" error from Leaflet
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
@@ -24,6 +26,8 @@ const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
 type Step = 'IDLE' | 'SELECTING' | 'SEARCHING' | 'RIDE_ACTIVE' | 'RIDE_COMPLETED';
 
 export default function MapPage() {
+    const router = useRouter();
+    const t = useTranslations('Ride');
     const [step, setStep] = useState<Step>('IDLE');
     const [destination, setDestination] = useState<[number, number] | null>(null);
     const [distance, setDistance] = useState<number>(0);
@@ -83,7 +87,7 @@ export default function MapPage() {
                         variant="ghost"
                         size="icon"
                         className="bg-[#0C0C0C] text-white rounded-full h-10 w-10 shadow-lg border border-[#1A1A1A]"
-                        onClick={() => window.location.href = '/'} // Or open menu
+                        onClick={() => router.push('/')} // Or open menu
                     >
                         {step === 'IDLE' ? <Menu className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
                     </Button>
@@ -102,7 +106,7 @@ export default function MapPage() {
                         className="bg-[#0C0C0C] text-white rounded-full h-10 w-10 shadow-lg border border-[#1A1A1A]"
                         onClick={() => {
                             if (step !== 'RIDE_ACTIVE') {
-                                window.location.href = '/notifications';
+                                router.push('/notifications');
                             }
                         }}
                     >
@@ -132,7 +136,7 @@ export default function MapPage() {
                                 onClick={() => setStep('SELECTING')}
                                 className="w-full h-14 bg-[#F0B90B] text-black font-bold text-lg rounded-xl shadow-lg hover:bg-[#F0B90B]/90"
                             >
-                                Where to?
+                                {t('whereTo')}
                             </Button>
                         </motion.div>
                     )}
@@ -166,8 +170,8 @@ export default function MapPage() {
                         >
                             <div className="bg-[#0C0C0C] p-8 rounded-2xl border border-[#1A1A1A] flex flex-col items-center shadow-2xl">
                                 <Loader2 className="w-12 h-12 text-[#F0B90B] animate-spin mb-4" />
-                                <h3 className="text-white font-heading font-bold text-xl mb-2">Searching...</h3>
-                                <p className="text-[#9A9A9A] text-sm">Contacting drivers</p>
+                                <h3 className="text-white font-heading font-bold text-xl mb-2">{t('searching')}</h3>
+                                <p className="text-[#9A9A9A] text-sm">{t('contactingDrivers')}</p>
                             </div>
                         </motion.div>
                     )}

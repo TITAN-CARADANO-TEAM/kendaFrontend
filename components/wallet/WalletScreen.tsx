@@ -5,8 +5,11 @@ import { Wallet, Plus, List, Copy, ExternalLink, RefreshCw, CreditCard } from "l
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 export function WalletScreen() {
+    const t = useTranslations('Wallet');
+    const tCommon = useTranslations('Common');
     // Mock state for connection (toggleable for demo)
     const [isConnected, setIsConnected] = useState(false);
     const [balance, setBalance] = useState("450.00");
@@ -17,7 +20,7 @@ export function WalletScreen() {
             {/* Header */}
             <header className="sticky top-0 z-10 bg-black/80 backdrop-blur-md -mx-4 px-4 py-4 mb-6 border-b border-[#1A1A1A]">
                 <h1 className="text-xl font-heading font-bold text-white text-center">
-                    Portefeuille
+                    {t('title')}
                 </h1>
             </header>
 
@@ -67,7 +70,7 @@ export function WalletScreen() {
 
                                 {/* Balance */}
                                 <div className="z-10">
-                                    <p className="text-[#9A9A9A] text-xs font-medium mb-1 uppercase tracking-wider">Solde Disponible</p>
+                                    <p className="text-[#9A9A9A] text-xs font-medium mb-1 uppercase tracking-wider">{t('availableBalance')}</p>
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-4xl font-heading font-bold text-white tracking-tight">
                                             {balance}
@@ -96,7 +99,7 @@ export function WalletScreen() {
                                     onClick={() => alert("Fonctionnalité à venir")}
                                 >
                                     <Plus className="w-5 h-5 mr-2" />
-                                    Recharger
+                                    {t('recharge')}
                                 </Button>
                                 <Button
                                     variant="secondary"
@@ -104,24 +107,24 @@ export function WalletScreen() {
                                     onClick={() => alert("Fonctionnalité à venir")}
                                 >
                                     <List className="w-5 h-5 mr-2 text-[#9A9A9A]" />
-                                    Historique
+                                    {t('history')}
                                 </Button>
                             </div>
 
                             {/* Recent Transactions Preview */}
                             <div>
-                                <h3 className="text-lg font-bold text-white mb-4">Dernières Transactions</h3>
+                                <h3 className="text-lg font-bold text-white mb-4">{t('recentTransactions')}</h3>
                                 <div className="space-y-3">
                                     <TransactionItem
                                         type="credit"
-                                        label="Recharge Mobile Money"
-                                        date="Aujourd'hui, 10:23"
+                                        label={t('mockTx1')}
+                                        date={`${tCommon('today')}, 10:23`}
                                         amount="+ 50 ADA"
                                     />
                                     <TransactionItem
                                         type="debit"
-                                        label="Course Taxi - Majengo"
-                                        date="Hier, 18:45"
+                                        label={t('mockTx2')}
+                                        date={`${tCommon('yesterday')}, 18:45`}
                                         amount="- 12 ADA"
                                     />
                                 </div>
@@ -140,21 +143,21 @@ export function WalletScreen() {
                             </div>
 
                             <h2 className="text-2xl font-heading font-bold text-white mb-3">
-                                Connectez votre Portefeuille
+                                {t('connectTitle')}
                             </h2>
                             <p className="text-[#9A9A9A] mb-8 max-w-xs mx-auto leading-relaxed">
-                                Connectez votre portefeuille Cardano pour payer vos courses et recevoir des récompenses KENDA.
+                                {t('connectDesc')}
                             </p>
 
                             <Button
                                 onClick={() => setIsConnected(true)}
                                 className="w-full max-w-xs h-14 bg-[#F0B90B] text-black font-bold text-lg rounded-xl shadow-lg hover:bg-[#F0B90B]/90"
                             >
-                                Connecter Portefeuille
+                                {t('connectBtn')}
                             </Button>
 
                             <p className="mt-6 text-xs text-[#555]">
-                                Supporte Nami, Eternl, Flint, Yoroi
+                                {t('supportedWallets')}
                             </p>
                         </motion.div>
                     )}
