@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 import {
     ShieldAlert,
@@ -18,23 +17,65 @@ import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import { useRouter } from "@/lib/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 
 interface DriverPendingVerificationProps {
-    driverName?: string;
-    submittedDate?: string;
-    estimatedCompletionDate?: string;
     onContactSupport?: () => void;
     onLogout?: () => void;
 }
 
 export function DriverPendingVerification({
-    driverName = "Alexandre K.",
-    submittedDate = "05 Décembre 2025",
-    estimatedCompletionDate = "07 Décembre 2025",
     onContactSupport,
     onLogout
 }: DriverPendingVerificationProps) {
     const t = useTranslations('Driver');
+    const { user } = useAuth();
+    const router = useRouter();
+    const supabase = createClient();
+    const [isValidating, setIsValidating] = useState(false);
+
+    // Auto-validate simulation (for demo purposes)
+    useEffect(() => {
+        if (!user) return;
+
+        console.log("Validation simulation started. Waiting 15s...");
+        const timer = setTimeout(async () => {
+            setIsValidating(true);
+            try {
+                // Update driver profile status
+                const { error: profileError } = await supabase
+                    .from('driver_profiles')
+                    .update({ status: 'VERIFIED' })
+                    .eq('user_id', user.id);
+
+                if (profileError) console.error("Error updating profile:", profileError);
+
+                // Also update user verification status (if allowed by RLS, otherwise might fail but we proceed)
+                // Note: 'users' table update might be restricted. If so, ignore error for demo.
+                const { error: userError } = await supabase
+                    .from('users')
+                    .update({ is_verified: true })
+                    .eq('id', user.id);
+
+                if (userError) console.error("Error updating user verification:", userError);
+
+                // Redirect to dashboard
+                console.log("Validation complete, redirecting...");
+                router.push('/driver/dashboard');
+            } catch (error) {
+                console.error("Simulation error:", error);
+            }
+        }, 15000); // 15 seconds
+
+        return () => clearTimeout(timer);
+    }, [user, router, supabase]);
+
+    const driverName = user?.user_metadata?.full_name || "Chauffeur";
+    const submittedDate = new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+    const estimatedDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
 
     const handleRefresh = () => {
         // Simulate API call to check verification status
@@ -161,7 +202,7 @@ export function DriverPendingVerification({
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-[#666]">{t('estimatedCompletion')}:</span>
-                                    <span className="text-[#F0B90B] font-bold">{estimatedCompletionDate}</span>
+                                    <span className="text-[#F0B90B] font-bold">{estimatedDate}</span>
                                 </div>
                             </div>
                         </CardContent>

@@ -18,9 +18,6 @@ export default function DriverPendingPage() {
 
     return (
         <DriverPendingVerification
-            driverName="Alexandre K."
-            submittedDate="05 Décembre 2025"
-            estimatedCompletionDate="07 Décembre 2025"
             onContactSupport={handleContactSupport}
             onLogout={handleLogout}
         />
