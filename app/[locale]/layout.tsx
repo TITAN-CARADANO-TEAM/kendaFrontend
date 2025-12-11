@@ -128,12 +128,10 @@ export const metadata: Metadata = {
     manifest: "/manifest.json",
     icons: {
         icon: [
-            { url: "/favicon.ico" },
-            { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-            { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+            { url: "/favicon.png", type: "image/png" },
         ],
         apple: [
-            { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+            { url: "/favicon.png", type: "image/png" },
         ],
     },
 };
@@ -162,7 +160,7 @@ export default async function RootLayout({
                             "name": "KENDA",
                             "alternateName": "KENDA Taxi",
                             "url": "https://kenda-appp.vercel.app",
-                            "logo": "https://kenda-appp.vercel.app/logo.png",
+                            "logo": "https://kenda-appp.vercel.app/logo.jpg",
                             "description": "Plateforme de VTC et taxi sécurisé par blockchain Cardano à Goma, RDC",
                             "foundingDate": "2024",
                             "founders": [

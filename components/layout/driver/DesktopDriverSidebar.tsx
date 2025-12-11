@@ -1,50 +1,45 @@
 "use client";
 
 import { Link, usePathname } from "@/lib/navigation";
-import { Home, Clock, Wallet, User, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, History, Wallet, UserCog, LogOut, ArrowLeftRight, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
-export function DesktopSidebar() {
+export function DesktopDriverSidebar() {
     const pathname = usePathname();
-    const t = useTranslations('Nav');
+    const t = useTranslations('DriverNav');
     const tCommon = useTranslations('Common');
-
-    // Don't show on landing page or login
-    if (pathname === "/" || pathname === "/login" || pathname.endsWith("/login")) {
-        return null;
-    }
 
     const navItems = [
         {
-            label: t('home'),
-            href: "/map",
-            icon: Home,
+            label: t('dashboard'),
+            href: "/driver/dashboard",
+            icon: LayoutDashboard,
         },
         {
-            label: t('activities'),
-            href: "/rides",
-            icon: Clock,
+            label: t('history'),
+            href: "/driver/history",
+            icon: History,
         },
         {
             label: t('wallet'),
-            href: "/wallet",
+            href: "/driver/wallet",
             icon: Wallet,
         },
         {
-            label: t('account'),
-            href: "/account",
-            icon: User,
+            label: t('profile'),
+            href: "/driver/profile",
+            icon: UserCog,
         },
     ];
 
     return (
         <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-[#0C0C0C] border-r border-[#1A1A1A] flex-col z-50">
-            {/* Logo Section */}
-            <div className="p-8 border-b border-[#1A1A1A]">
-                <div className="flex items-center gap-4">
+            {/* Logo Section with Driver Badge */}
+            <div className="p-6 border-b border-[#1A1A1A]">
+                <div className="flex items-center gap-4 mb-3">
                     <Image
                         src="/logo.jpg"
                         alt="KENDA Logo"
@@ -56,15 +51,19 @@ export function DesktopSidebar() {
                         KENDA
                     </h1>
                 </div>
-                <p className="text-[#9A9A9A] text-xs font-medium tracking-wide uppercase mt-2">
-                    {tCommon('safeMobility')}
-                </p>
+                {/* Driver Badge */}
+                <div className="flex items-center gap-2 bg-[#F0B90B]/10 border border-[#F0B90B]/30 rounded-lg px-3 py-2">
+                    <Shield className="w-4 h-4 text-[#F0B90B]" />
+                    <span className="text-xs font-bold text-[#F0B90B] uppercase tracking-wider">
+                        {t('driverSpace')}
+                    </span>
+                </div>
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 py-8 px-4 space-y-2">
+            <nav className="flex-1 py-6 px-4 space-y-2">
                 {navItems.map((item) => {
-                    const isActive = pathname === item.href;
+                    const isActive = pathname === item.href || pathname.startsWith(item.href);
                     const Icon = item.icon;
 
                     return (
@@ -74,7 +73,7 @@ export function DesktopSidebar() {
                             className={cn(
                                 "flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden",
                                 isActive
-                                    ? "bg-[#1A1A1A] text-[#F0B90B]"
+                                    ? "bg-[#F0B90B]/10 text-[#F0B90B] border border-[#F0B90B]/30"
                                     : "text-[#9A9A9A] hover:text-white hover:bg-[#151515]"
                             )}
                         >
@@ -88,29 +87,33 @@ export function DesktopSidebar() {
                 })}
             </nav>
 
-            {/* User Footer */}
-            <div className="p-4 border-t border-[#1A1A1A]">
-                <div className="bg-[#151515] rounded-xl p-4 mb-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#1A1A1A] border border-[#333] flex items-center justify-center">
-                        <User className="w-5 h-5 text-[#F0B90B]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white truncate">Alexandre K.</p>
-                        <div className="flex items-center gap-1">
-                            <Shield className="w-3 h-3 text-[#F0B90B]" />
-                            <span className="text-[10px] text-[#9A9A9A]">{t('verified')}</span>
-                        </div>
-                    </div>
-                </div>
+            {/* Footer Actions */}
+            <div className="p-4 border-t border-[#1A1A1A] space-y-3">
+                {/* Switch to Passenger Mode */}
+                <Link href="/map">
+                    <Button
+                        variant="outline"
+                        className="w-full justify-start border-[#333333] text-white hover:bg-[#1A1A1A] hover:border-[#F0B90B] h-11"
+                    >
+                        <ArrowLeftRight className="w-4 h-4 mr-3 text-[#F0B90B]" />
+                        <span className="text-sm">{t('switchToPassenger')}</span>
+                    </Button>
+                </Link>
 
+                {/* Logout Button */}
                 <Button
                     variant="ghost"
-                    className="w-full justify-start text-red-500 hover:text-red-400 hover:bg-red-500/10 h-12"
+                    className="w-full justify-start text-red-500 hover:text-red-400 hover:bg-red-500/10 h-11"
                     onClick={() => alert("Fonctionnalité à venir")}
                 >
                     <LogOut className="w-4 h-4 mr-3" />
                     {t('logout')}
                 </Button>
+
+                {/* Version Info */}
+                <p className="text-center text-[10px] text-[#666] pt-2">
+                    KENDA Driver v1.0.2
+                </p>
             </div>
         </aside>
     );

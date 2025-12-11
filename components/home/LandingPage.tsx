@@ -5,6 +5,7 @@ import { Link } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Wallet, Scale, ArrowRight, CheckCircle2, MapPin, Smartphone } from "lucide-react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 import { useTranslations } from 'next-intl';
 
@@ -21,9 +22,18 @@ export function LandingPage() {
             {/* A. Navbar */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-lg border-b border-white/5">
                 <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-                    <div className="flex flex-col">
-                        <span className="text-2xl font-heading font-bold text-white tracking-tight">KENDA</span>
-                        <span className="text-[10px] text-[#9A9A9A] uppercase tracking-widest font-medium">{t('headerSubtitle')}</span>
+                    <div className="flex items-center gap-4">
+                        <Image
+                            src="/logo.jpg"
+                            alt="KENDA Logo"
+                            width={52}
+                            height={52}
+                            className="rounded-xl"
+                        />
+                        <div className="flex flex-col">
+                            <span className="text-2xl font-heading font-bold text-white tracking-tight">KENDA</span>
+                            <span className="text-[10px] text-[#9A9A9A] uppercase tracking-widest font-medium">{t('headerSubtitle')}</span>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
                         <Link href="/login">
@@ -177,7 +187,16 @@ export function LandingPage() {
                 <footer className="py-12 bg-[#0C0C0C]">
                     <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex flex-col items-center md:items-start">
-                            <span className="text-xl font-heading font-bold text-white">KENDA</span>
+                            <div className="flex items-center gap-3">
+                                <Image
+                                    src="/logo.jpg"
+                                    alt="KENDA Logo"
+                                    width={44}
+                                    height={44}
+                                    className="rounded-lg"
+                                />
+                                <span className="text-xl font-heading font-bold text-white">KENDA</span>
+                            </div>
                             <p className="text-sm text-[#666] mt-2">{t('footerDev')}</p>
                         </div>
                         <div className="flex gap-8 text-sm text-[#9A9A9A]">

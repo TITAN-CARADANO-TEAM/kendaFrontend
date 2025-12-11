@@ -6,6 +6,15 @@
         "today": "Aujourd'hui",
         "yesterday": "Hier"
     },
+    "DriverNav": {
+        "dashboard": "Tableau de bord",
+        "history": "Courses",
+        "wallet": "Portefeuille",
+        "profile": "Profil Pro",
+        "driverSpace": "Espace Chauffeur",
+        "switchToPassenger": "Mode Passager",
+        "logout": "Déconnexion"
+    },
     "Nav": {
         "home": "Accueil",
         "activities": "Activités",
@@ -194,6 +203,18 @@
         "logout": "Déconnexion",
         "version": "Version",
         "completed": "Terminé",
-        "cancelled": "Annulé"
+        "cancelled": "Annulé",
+        "guestUser": "Utilisateur",
+        "noRidesYet": "Aucune course pour l'instant"
+    },
+    "Notifications": {
+        "title": "Notifications",
+        "markAllRead": "Tout marquer comme lu",
+        "noNotifications": "Aucune notification",
+        "noNotificationsDesc": "Vous n'avez pas encore de notifications. Elles apparaîtront ici.",
+        "new": "Nouveau",
+        "minutesAgo": "Il y a {count} min",
+        "hoursAgo": "Il y a {count}h",
+        "yesterday": "Hier"
     }
 }

@@ -6,6 +6,15 @@
         "today": "Today",
         "yesterday": "Yesterday"
     },
+    "DriverNav": {
+        "dashboard": "Dashboard",
+        "history": "Rides",
+        "wallet": "Wallet",
+        "profile": "Pro Profile",
+        "driverSpace": "Driver Space",
+        "switchToPassenger": "Passenger Mode",
+        "logout": "Logout"
+    },
     "Nav": {
         "home": "Home",
         "activities": "Activities",
@@ -194,7 +203,19 @@
         "logout": "Logout",
         "version": "Version",
         "completed": "Completed",
-        "cancelled": "Cancelled"
+        "cancelled": "Cancelled",
+        "guestUser": "User",
+        "noRidesYet": "No rides yet"
+    },
+    "Notifications": {
+        "title": "Notifications",
+        "markAllRead": "Mark all as read",
+        "noNotifications": "No notifications",
+        "noNotificationsDesc": "You don't have any notifications yet. They will appear here.",
+        "new": "New",
+        "minutesAgo": "{count} min ago",
+        "hoursAgo": "{count}h ago",
+        "yesterday": "Yesterday"
     },
     "Wallet": {
         "title": "Wallet",

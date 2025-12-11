@@ -3,7 +3,7 @@
 import React from "react";
 import { Link } from "@/lib/navigation";
 import {
-    User,
+    User as UserIcon,
     Shield,
     Star,
     Clock,
@@ -16,56 +16,47 @@ import {
     LogOut,
     ChevronRight,
     CreditCard,
-    Car
+    Car,
+    Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslations } from "next-intl";
-import { useFormatter } from 'next-intl';
+import Image from "next/image";
 
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
+import type { User, UserStats, Ride } from "@/types";
 
-// NOTE: In a real app, this data should come from an API and be formatted according to locale
-const MOCK_RIDES = [
-    {
-        id: "1",
-        dateKey: "today",
-        time: "08:30",
-        from: "Majengo",
-        to: "Centre-ville",
-        price: "2500 FC",
-        status: "COMPLETED",
-        distance: "4.2 km"
-    },
-    {
-        id: "2",
-        dateKey: "yesterday",
-        time: "18:15",
-        from: "Himbi",
-        to: "Aéroport Intl. Goma",
-        price: "5000 FC",
-        status: "COMPLETED",
-        distance: "8.5 km"
-    },
-    {
-        id: "3",
-        dateKey: "02 Dec", // Static date for now
-        time: "14:00",
-        from: "Université de Goma",
-        to: "Katindo",
-        price: "1500 FC",
-        status: "CANCELLED",
-        distance: "2.1 km"
-    }
-];
+interface UserProfileScreenProps {
+    /** User data - will come from Supabase */
+    user?: User | null;
+    /** User statistics - will come from Supabase */
+    stats?: UserStats | null;
+    /** Recent rides - will come from Supabase */
+    recentRides?: Ride[];
+    /** Loading state */
+    isLoading?: boolean;
+}
 
-export function UserProfileScreen() {
+export function UserProfileScreen({
+    user,
+    stats,
+    recentRides = [],
+    isLoading = false
+}: UserProfileScreenProps) {
     const t = useTranslations('Profile');
     const tCommon = useTranslations('Common');
 
     return (
         <div className="h-full overflow-y-auto bg-background text-foreground pb-24">
+            {/* Loading State */}
+            {isLoading && (
+                <div className="flex items-center justify-center h-64">
+                    <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                </div>
+            )}
+
             {/* Header Section */}
             <div className="relative pt-safe bg-gradient-to-b from-background-secondary to-background border-b border-border">
                 <div className="absolute top-4 right-4 z-10">
@@ -75,39 +66,53 @@ export function UserProfileScreen() {
                     {/* Avatar & Badge */}
                     <div className="relative mb-4">
                         <div className="w-24 h-24 rounded-full bg-background-secondary border-2 border-border flex items-center justify-center overflow-hidden shadow-xl">
-                            <User className="w-10 h-10 text-foreground-secondary" />
-                            {/* In a real app, use <img src={user.avatar} /> */}
+                            {user?.avatar_url ? (
+                                <Image
+                                    src={user.avatar_url}
+                                    alt={user.full_name || 'Avatar'}
+                                    width={96}
+                                    height={96}
+                                    className="object-cover w-full h-full"
+                                />
+                            ) : (
+                                <UserIcon className="w-10 h-10 text-foreground-secondary" />
+                            )}
                         </div>
-                        <div className="absolute -bottom-1 -right-1 bg-accent text-accent-foreground rounded-full p-1.5 border-4 border-background">
-                            <Shield className="w-3.5 h-3.5 fill-current" />
-                        </div>
+                        {user?.is_verified && (
+                            <div className="absolute -bottom-1 -right-1 bg-accent text-accent-foreground rounded-full p-1.5 border-4 border-background">
+                                <Shield className="w-3.5 h-3.5 fill-current" />
+                            </div>
+                        )}
                     </div>
 
                     {/* User Info */}
                     <h1 className="text-2xl font-heading font-bold text-foreground mb-1 text-center">
-                        Alexandre K.
+                        {user?.full_name || t('guestUser')}
                     </h1>
-                    <div className="flex items-center gap-1.5 bg-accent/10 px-3 py-1 rounded-full border border-accent/20 mb-6">
-                        <Shield className="w-3 h-3 text-accent fill-current" />
-                        <span className="text-[10px] font-bold text-accent uppercase tracking-wide">
-                            {t('verifiedPassenger')}
-                        </span>
-                    </div>
+                    {user?.is_verified && (
+                        <div className="flex items-center gap-1.5 bg-accent/10 px-3 py-1 rounded-full border border-accent/20 mb-6">
+                            <Shield className="w-3 h-3 text-accent fill-current" />
+                            <span className="text-[10px] font-bold text-accent uppercase tracking-wide">
+                                {t('verifiedPassenger')}
+                            </span>
+                        </div>
+                    )}
 
                     {/* Stats Grid */}
+                    {/* TODO: Connect to Supabase - stats will come from userService.getUserStats() */}
                     <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
                         <StatBlock
                             label={t('statsRides')}
-                            value="42"
+                            value={stats?.total_rides?.toString() || "0"}
                         />
                         <StatBlock
                             label={t('statsRating')}
-                            value="4.9"
+                            value={stats?.average_rating?.toFixed(1) || "5.0"}
                             icon={<Star className="w-3 h-3 text-accent fill-current ml-1" />}
                         />
                         <StatBlock
                             label={t('statsTotalKm')}
-                            value="128"
+                            value={stats?.total_km?.toString() || "0"}
                         />
                     </div>
                 </div>
@@ -145,7 +150,7 @@ export function UserProfileScreen() {
                     </h3>
                     <div className="bg-background-secondary rounded-xl border border-border overflow-hidden divide-y divide-border/50">
                         <MenuItem
-                            icon={<User className="w-5 h-5" />}
+                            icon={<UserIcon className="w-5 h-5" />}
                             label={t('personalInfo')}
                             onClick={() => alert("Fonctionnalité à venir")}
                         />
@@ -168,6 +173,7 @@ export function UserProfileScreen() {
                 </div>
 
                 {/* Recent Activity */}
+                {/* TODO: Connect to Supabase - rides will come from rideService.getRideHistory() */}
                 <div className="space-y-3">
                     <div className="flex items-center justify-between px-1">
                         <h3 className="text-sm font-bold text-foreground-secondary uppercase tracking-wider">
@@ -179,22 +185,48 @@ export function UserProfileScreen() {
                     </div>
 
                     <div className="space-y-3">
-                        {MOCK_RIDES.map((ride) => {
-                            let dateLabel = ride.dateKey;
-                            if (ride.dateKey === 'today') dateLabel = tCommon('today');
-                            else if (ride.dateKey === 'yesterday') dateLabel = tCommon('yesterday');
+                        {recentRides.length === 0 ? (
+                            <div className="text-center py-8 text-foreground-secondary">
+                                <Car className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                                <p className="text-sm">{t('noRidesYet')}</p>
+                            </div>
+                        ) : (
+                            recentRides.map((ride) => {
+                                // Format date from ride data
+                                const rideDate = ride.completed_at ? new Date(ride.completed_at) : new Date(ride.created_at);
+                                const today = new Date();
+                                const yesterday = new Date(today);
+                                yesterday.setDate(yesterday.getDate() - 1);
 
-                            const dateString = `${dateLabel}, ${ride.time}`;
+                                let dateLabel: string;
+                                if (rideDate.toDateString() === today.toDateString()) {
+                                    dateLabel = tCommon('today');
+                                } else if (rideDate.toDateString() === yesterday.toDateString()) {
+                                    dateLabel = tCommon('yesterday');
+                                } else {
+                                    dateLabel = rideDate.toLocaleDateString();
+                                }
 
-                            return (
-                                <RideCard
-                                    key={ride.id}
-                                    ride={ride}
-                                    t={t}
-                                    dateString={dateString}
-                                />
-                            );
-                        })}
+                                const timeString = rideDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                const dateString = `${dateLabel}, ${timeString}`;
+
+                                return (
+                                    <RideCard
+                                        key={ride.id}
+                                        ride={{
+                                            id: ride.id,
+                                            from: ride.pickup_address || 'Point de départ',
+                                            to: ride.destination_address || 'Destination',
+                                            price: `${ride.final_price || ride.estimated_price} ${ride.currency}`,
+                                            status: ride.status,
+                                            distance: ride.distance_km ? `${ride.distance_km} km` : '--'
+                                        }}
+                                        t={t}
+                                        dateString={dateString}
+                                    />
+                                );
+                            })
+                        )}
                     </div>
                 </div>
 

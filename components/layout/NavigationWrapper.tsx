@@ -4,12 +4,17 @@ import { usePathname } from "next/navigation";
 import { MobileNavBar } from "@/components/layout/MobileNavBar";
 import { DesktopSidebar } from "@/components/layout/DesktopSidebar";
 
-// Routes where navigation should be hidden
+// Routes where navigation should be hidden completely
 const HIDDEN_NAV_ROUTES = [
     "/", // Landing Page
     "/login",
     "/driver-application",
     "/driver-pending"
+];
+
+// Routes that use driver navigation (handled by driver layout)
+const DRIVER_NAV_ROUTES = [
+    "/driver"
 ];
 
 interface NavigationWrapperProps {
@@ -34,12 +39,16 @@ export function NavigationWrapper({ children }: NavigationWrapperProps) {
 
     const currentPath = normalizePath(pathname);
 
-    // Check if current route should hide navigation
-    // We check exact match for root, or startsWith for others to handle sub-routes if needed
+    // Check if current route should hide navigation completely
     const shouldHideNav = HIDDEN_NAV_ROUTES.some(route => {
         if (route === '/') return currentPath === '/';
         return currentPath.startsWith(route);
     });
+
+    // Check if current route uses driver navigation (driver layout handles its own nav)
+    const isDriverRoute = DRIVER_NAV_ROUTES.some(route =>
+        currentPath.startsWith(route)
+    );
 
     // If navigation should be hidden, render children without nav
     if (shouldHideNav) {
@@ -50,7 +59,17 @@ export function NavigationWrapper({ children }: NavigationWrapperProps) {
         );
     }
 
-    // Normal layout with navigation
+    // If it's a driver route, the driver layout handles its own navigation
+    // So we just render children without passenger navigation
+    if (isDriverRoute) {
+        return (
+            <div className="h-full w-full overflow-y-auto">
+                {children}
+            </div>
+        );
+    }
+
+    // Normal layout with passenger navigation
     return (
         <>
             <DesktopSidebar />

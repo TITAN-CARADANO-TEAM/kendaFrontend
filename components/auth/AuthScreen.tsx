@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/lib/navigation";
+import Image from "next/image";
 
 type UserRole = 'PASSENGER' | 'DRIVER';
 
@@ -42,9 +43,8 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                         router.push('/driver-application');
                     } else {
                         // Existing driver login - go to driver dashboard
-                        // In a real app, you would check if the driver is verified
-                        // and redirect to driver-pending if not verified yet
-                        router.push('/driver-dashboard');
+                        // Using the new driver navigation structure
+                        router.push('/driver/dashboard');
                     }
                 } else {
                     // Passenger - go to map
@@ -59,9 +59,18 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
             <div className="w-full max-w-md bg-black md:bg-[#0C0C0C] md:border md:border-[#1A1A1A] md:rounded-3xl md:p-8 md:shadow-2xl flex flex-col h-full md:h-auto min-h-[500px]">
                 {/* Logo Section */}
                 <div className="flex flex-col items-center mt-6 md:mt-0 mb-10">
-                    <h1 className="font-heading font-bold text-4xl text-white tracking-tight mb-2">
-                        KENDA
-                    </h1>
+                    <div className="flex items-center gap-4 mb-2">
+                        <Image
+                            src="/logo.jpg"
+                            alt="KENDA Logo"
+                            width={64}
+                            height={64}
+                            className="rounded-2xl"
+                        />
+                        <h1 className="font-heading font-bold text-4xl text-white tracking-tight">
+                            KENDA
+                        </h1>
+                    </div>
                     <p className="text-[#9A9A9A] text-sm font-medium tracking-wide uppercase">
                         {t('headerSubtitle')}
                     </p>

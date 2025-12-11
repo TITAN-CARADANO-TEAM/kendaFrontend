@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 
 interface DriverPendingVerificationProps {
     driverName?: string;
@@ -66,9 +67,18 @@ export function DriverPendingVerification({
             {/* Header */}
             <div className="pt-safe px-6 py-6 border-b border-[#1A1A1A]">
                 <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-heading font-bold">KENDA</h1>
-                        <p className="text-xs text-[#9A9A9A] uppercase tracking-widest">{t('driverSpace')}</p>
+                    <div className="flex items-center gap-4">
+                        <Image
+                            src="/logo.jpg"
+                            alt="KENDA Logo"
+                            width={48}
+                            height={48}
+                            className="rounded-xl"
+                        />
+                        <div>
+                            <h1 className="text-2xl font-heading font-bold">KENDA</h1>
+                            <p className="text-xs text-[#9A9A9A] uppercase tracking-widest">{t('driverSpace')}</p>
+                        </div>
                     </div>
                     <button
                         onClick={onLogout}

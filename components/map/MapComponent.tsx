@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import type { DriverLocation } from '@/types';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -95,13 +96,14 @@ const MapClickHandler = ({
 
 interface MapComponentProps {
     onDestinationChange?: (destination: [number, number] | null, distance: number) => void;
+    /** Nearby drivers to display on map - provided by parent component */
+    nearbyDrivers?: DriverLocation[];
 }
 
-const MapComponent = ({ onDestinationChange }: MapComponentProps) => {
+const MapComponent = ({ onDestinationChange, nearbyDrivers = [] }: MapComponentProps) => {
     const t = useTranslations('Ride');
     const [position, setPosition] = useState<[number, number] | null>(null);
     const [destination, setDestination] = useState<[number, number] | null>(null);
-    const [taxis, setTaxis] = useState<[number, number][]>([]);
 
     useEffect(() => {
         // Get User Location
@@ -112,24 +114,18 @@ const MapComponent = ({ onDestinationChange }: MapComponentProps) => {
                     const userPos: [number, number] = [latitude, longitude];
                     setPosition(userPos);
 
-                    // Generate Mock Taxis around user
-                    const mockTaxis: [number, number][] = [
-                        [latitude + 0.002, longitude + 0.002],
-                        [latitude - 0.003, longitude + 0.001],
-                        [latitude + 0.001, longitude - 0.003],
-                        [latitude - 0.001, longitude - 0.002],
-                    ];
-                    setTaxis(mockTaxis);
+                    // TODO: Connect to Supabase - fetch nearby drivers based on user position
+                    // const response = await driverService.getNearbyDrivers(latitude, longitude);
                 },
                 (err) => {
                     console.error("Error getting location:", err);
-                    // Default fallback (e.g., Kinshasa)
-                    setPosition([-4.4419, 15.2663]);
+                    // Default fallback (Goma, RDC)
+                    setPosition([-1.6777, 29.2285]);
                 }
             );
         } else {
-            // Fallback if geolocation not supported
-            setPosition([-4.4419, 15.2663]);
+            // Fallback if geolocation not supported (Goma, RDC)
+            setPosition([-1.6777, 29.2285]);
         }
     }, []);
 
@@ -237,10 +233,18 @@ const MapComponent = ({ onDestinationChange }: MapComponentProps) => {
                 </Marker>
             )}
 
-            {/* Taxi Markers */}
-            {taxis.map((taxiPos, index) => (
-                <Marker key={index} position={taxiPos} icon={createTaxiIcon()}>
-                    <Popup>{t('taxiAvailable', { id: index + 1 })}</Popup>
+            {/* Driver Markers */}
+            {/* TODO: Connect to Supabase - drivers will come from real-time subscription */}
+            {nearbyDrivers.map((driver) => (
+                <Marker
+                    key={driver.driver_id}
+                    position={[driver.latitude, driver.longitude]}
+                    icon={createTaxiIcon()}
+                >
+                    <Popup>
+                        {driver.driver_name || t('taxiAvailable', { id: driver.driver_id.slice(0, 4) })}
+                        {driver.rating && ` ⭐ ${driver.rating}`}
+                    </Popup>
                 </Marker>
             ))}
         </MapContainer>

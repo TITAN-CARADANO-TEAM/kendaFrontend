@@ -6,6 +6,15 @@
         "today": "Leo",
         "yesterday": "Jana"
     },
+    "DriverNav": {
+        "dashboard": "Dashibodi",
+        "history": "Safari",
+        "wallet": "Pochi",
+        "profile": "Wasifu wa Pro",
+        "driverSpace": "Eneo la Dereva",
+        "switchToPassenger": "Hali ya Abiria",
+        "logout": "Toka"
+    },
     "Nav": {
         "home": "Nyumbani",
         "activities": "Shughuli",
@@ -194,7 +203,19 @@
         "logout": "Toka",
         "version": "Toleo",
         "completed": "Imekamilika",
-        "cancelled": "Imeghairiwa"
+        "cancelled": "Imeghairiwa",
+        "guestUser": "Mtumiaji",
+        "noRidesYet": "Hakuna safari bado"
+    },
+    "Notifications": {
+        "title": "Arifa",
+        "markAllRead": "Weka zote kama zimesomwa",
+        "noNotifications": "Hakuna arifa",
+        "noNotificationsDesc": "Huna arifa yoyote bado. Zitaonekana hapa.",
+        "new": "Mpya",
+        "minutesAgo": "Dakika {count} zilizopita",
+        "hoursAgo": "Saa {count} zilizopita",
+        "yesterday": "Jana"
     },
     "Wallet": {
         "title": "Pochi",

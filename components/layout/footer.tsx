@@ -1,10 +1,21 @@
+import Image from "next/image";
+
 export function Footer() {
     return (
         <footer className="border-t border-border bg-background">
             <div className="container mx-auto px-4 py-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div className="col-span-1 md:col-span-2">
-                        <h3 className="text-h2 font-heading text-accent mb-4">KENDA</h3>
+                        <div className="flex items-center gap-4 mb-4">
+                            <Image
+                                src="/logo.jpg"
+                                alt="KENDA Logo"
+                                width={52}
+                                height={52}
+                                className="rounded-xl"
+                            />
+                            <h3 className="text-h2 font-heading text-accent">KENDA</h3>
+                        </div>
                         <p className="text-body-sm text-foreground-secondary max-w-md">
                             Decentralized urban mobility platform powered by Cardano blockchain.
                             Ride, earn, and contribute to a sustainable future.
