@@ -26,6 +26,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/lib/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 type VehicleType = 'MOTO' | 'TAXI';
 type Step = 1 | 2 | 3 | 4;
@@ -74,6 +75,7 @@ export function DriverOnboardingForm({
         selfie: null,
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState("");
 
     // For EXISTING_USER, selfie is not required
     const totalSteps = mode === 'EXISTING_USER' ? 3 : 4;
@@ -105,18 +107,133 @@ export function DriverOnboardingForm({
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         setIsSubmitting(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsSubmitting(false);
+        setLoadingMessage(t('creatingProfile') || "Création du profil...");
+        const supabase = createClient();
+
+        try {
+            // 1. Get current user
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            if (userError || !user) throw new Error("Utilisateur non authentifié");
+
+            // 2. Create or Get Driver Profile
+            // Check if profile exists
+            let { data: profile } = await supabase
+                .from('driver_profiles')
+                .select('id')
+                .eq('user_id', user.id)
+                .single();
+
+            if (!profile) {
+                // Create new profile
+                const { data: newProfile, error: profileError } = await supabase
+                    .from('driver_profiles')
+                    .insert({
+                        user_id: user.id,
+                        vehicle_type: formData.vehicleType || 'TAXI',
+                        vehicle_brand: formData.brand,
+                        vehicle_model: formData.model,
+                        vehicle_color: formData.color,
+                        license_plate: formData.licensePlate,
+                        status: 'PENDING',
+                        is_online: false
+                    })
+                    .select()
+                    .single();
+
+                if (profileError) throw new Error(`Erreur création profil: ${profileError.message}`);
+                profile = newProfile;
+            } else {
+                // Update existing profile with new vehicle info if needed
+                // (Optional: depending on business logic, maybe just update status)
+                await supabase
+                    .from('driver_profiles')
+                    .update({
+                        vehicle_type: formData.vehicleType || 'TAXI',
+                        vehicle_brand: formData.brand,
+                        vehicle_model: formData.model,
+                        vehicle_color: formData.color,
+                        license_plate: formData.licensePlate,
+                        status: 'PENDING'
+                    })
+                    .eq('id', profile.id);
+            }
+
+            if (!profile) throw new Error("Profil chauffeur introuvable");
+
+            // 3. Upload Documents
+            const uploadFile = async (file: File, docType: string) => {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}/${docType}_${Date.now()}.${fileExt}`;
+                const filePath = fileName; // Path in the bucket
+
+                const { error: uploadError } = await supabase.storage
+                    .from('driver-documents')
+                    .upload(filePath, file);
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('driver-documents')
+                    .getPublicUrl(filePath);
+
+                return { filePath, publicUrl };
+            };
+
+            const documentsToUpload = [
+                { file: formData.driverLicenseFront, type: 'LICENSE_FRONT' },
+                { file: formData.driverLicenseBack, type: 'LICENSE_BACK' },
+                { file: formData.carRegistration, type: 'REGISTRATION' },
+                { file: formData.insurance, type: 'INSURANCE' },
+                { file: formData.selfie, type: 'SELFIE' }
+            ].filter(doc => doc.file !== null); // Filter out nulls (e.g. insurance if optional, or selfie if existing user)
+
+            // Process uploads
+            for (const doc of documentsToUpload) {
+                if (doc.file) {
+                    try {
+                        setLoadingMessage(`${t('uploading') || "Envoi"} ${doc.type.toLowerCase()}...`);
+                        const { filePath, publicUrl } = await uploadFile(doc.file, doc.type);
+
+                        // 4. Insert Document Record
+                        const { error: docError } = await supabase
+                            .from('driver_documents')
+                            .insert({
+                                driver_profile_id: profile.id,
+                                document_type: doc.type,
+                                file_url: publicUrl,
+                                file_path: filePath, // Store path for potential cleanup/deletion
+                                status: 'PENDING'
+                            });
+
+                        if (docError) {
+                            console.error(`Erreur enregistrement doc ${doc.type}:`, docError);
+                            // Decide if we want to stop or continue. Continuing allows partial uploads.
+                            // For now, we log and continue.
+                        }
+                    } catch (uploadErr) {
+                        console.error(`Erreur upload doc ${doc.type}:`, uploadErr);
+                        throw new Error(`Échec de l'envoi du document: ${doc.type}`);
+                    }
+                }
+            }
+
+            setLoadingMessage(t('finalizing') || "Finalisation...");
+
+            // 5. Success
             if (onComplete) {
                 onComplete();
             } else {
-                // Redirect to pending verification page
                 router.push('/driver-pending');
             }
-        }, 2000);
+
+        } catch (error: any) {
+            console.error("Erreur soumission:", error);
+            alert(`Erreur: ${error.message || "Une erreur est survenue"}`);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const shouldShowPending = currentStep === 4 && mode === 'NEW_DRIVER';
@@ -250,7 +367,7 @@ export function DriverOnboardingForm({
                                     {isSubmitting ? (
                                         <>
                                             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                            {t('sending')}
+                                            {loadingMessage || t('sending')}
                                         </>
                                     ) : (
                                         <>

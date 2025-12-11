@@ -139,20 +139,39 @@ export function AuthScreen({ onAuthenticated, defaultRole = 'PASSENGER' }: AuthS
                     return;
                 }
 
-                showMessage('success', t('signupSuccess') || 'Compte créé avec succès ! Vous pouvez vous connecter.');
+                // Check if session exists (email confirmation is disabled)
+                if (data.session) {
+                    // User is automatically logged in - redirect based on role
+                    showMessage('success', t('signupSuccessAutoLogin') || 'Compte créé ! Connexion automatique...');
 
-                // Clear form and switch to login
-                setFullName("");
-                setPhone("");
-                setPassword("");
-                setConfirmPassword("");
-                setCity("");
+                    setTimeout(() => {
+                        if (onAuthenticated) {
+                            onAuthenticated(role);
+                        } else {
+                            if (role === 'DRIVER') {
+                                router.push('/driver-application');
+                            } else {
+                                router.push('/map');
+                            }
+                        }
+                    }, 1000);
+                } else {
+                    // Email confirmation is required
+                    showMessage('success', t('signupSuccessConfirmEmail') || 'Compte créé ! Vérifiez votre email pour confirmer votre inscription.');
 
-                // Auto-switch to login after successful signup
-                setTimeout(() => {
-                    setMode('LOGIN');
-                    setMessage(null);
-                }, 2000);
+                    // Clear form and switch to login
+                    setFullName("");
+                    setPhone("");
+                    setPassword("");
+                    setConfirmPassword("");
+                    setCity("");
+
+                    // Auto-switch to login after delay
+                    setTimeout(() => {
+                        setMode('LOGIN');
+                        setMessage(null);
+                    }, 4000);
+                }
             }
 
         } catch (err) {

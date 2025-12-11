@@ -25,7 +25,7 @@ interface DriverDashboardProps {
 }
 
 export function DriverDashboard({
-    driverName = "Alexandre K.",
+    driverName,
     driverAvatar
 }: DriverDashboardProps) {
     const t = useTranslations('Driver');
@@ -132,7 +132,7 @@ export function DriverDashboard({
                                 )}
                             </div>
                             <div>
-                                <p className="text-sm font-bold text-white">{driverName}</p>
+                                <p className="text-sm font-bold text-white">{driverName || "Chauffeur"}</p>
                                 <div className="flex items-center gap-1">
                                     <Star className="w-3 h-3 text-[#F0B90B] fill-current" />
                                     <span className="text-xs text-[#9A9A9A]">{currentRating}</span>

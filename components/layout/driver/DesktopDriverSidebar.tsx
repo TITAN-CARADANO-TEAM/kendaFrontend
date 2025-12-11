@@ -6,11 +6,13 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import { useAuth } from "@/hooks/useAuth";
 
 export function DesktopDriverSidebar() {
     const pathname = usePathname();
     const t = useTranslations('DriverNav');
     const tCommon = useTranslations('Common');
+    const { signOut } = useAuth();
 
     const navItems = [
         {
@@ -104,7 +106,10 @@ export function DesktopDriverSidebar() {
                 <Button
                     variant="ghost"
                     className="w-full justify-start text-red-500 hover:text-red-400 hover:bg-red-500/10 h-11"
-                    onClick={() => alert("Fonctionnalité à venir")}
+                    onClick={async () => {
+                        await signOut();
+                        window.location.href = '/login';
+                    }}
                 >
                     <LogOut className="w-4 h-4 mr-3" />
                     {t('logout')}

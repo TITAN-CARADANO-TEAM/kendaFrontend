@@ -58,6 +58,8 @@
         "errorEmailNotConfirmed": "Please confirm your email before logging in",
         "errorUnexpected": "An unexpected error occurred",
         "signupSuccess": "Account created successfully! You can now log in.",
+        "signupSuccessAutoLogin": "Account created! Logging in automatically...",
+        "signupSuccessConfirmEmail": "Account created! Check your email to confirm your registration.",
         "loginSuccess": "Login successful!"
     },
     "Landing": {

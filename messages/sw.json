@@ -58,6 +58,8 @@
         "errorEmailNotConfirmed": "Tafadhali thibitisha barua pepe yako kabla ya kuingia",
         "errorUnexpected": "Hitilafu isiyotarajiwa imetokea",
         "signupSuccess": "Akaunti imeundwa kwa mafanikio! Unaweza kuingia sasa.",
+        "signupSuccessAutoLogin": "Akaunti imeundwa! Kuingia kiotomatiki...",
+        "signupSuccessConfirmEmail": "Akaunti imeundwa! Angalia barua pepe yako ili kuthibitisha usajili wako.",
         "loginSuccess": "Umeingia kwa mafanikio!"
     },
     "Landing": {

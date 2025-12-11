@@ -58,6 +58,8 @@
         "errorEmailNotConfirmed": "Veuillez confirmer votre email avant de vous connecter",
         "errorUnexpected": "Une erreur inattendue s'est produite",
         "signupSuccess": "Compte créé avec succès ! Vous pouvez maintenant vous connecter.",
+        "signupSuccessAutoLogin": "Compte créé ! Connexion automatique...",
+        "signupSuccessConfirmEmail": "Compte créé ! Vérifiez votre email pour confirmer votre inscription.",
         "loginSuccess": "Connexion réussie !"
     },
     "Landing": {
