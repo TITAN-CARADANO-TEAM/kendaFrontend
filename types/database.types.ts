@@ -210,6 +210,22 @@ export interface WalletTransactionRow {
     created_at: string;
 }
 
+/**
+ * Table: public.driver_documents
+ * Documents uploadés par les chauffeurs
+ */
+export interface DriverDocumentRow {
+    id: string;
+    driver_profile_id: string | null;
+    document_type: string;
+    file_url: string;
+    file_path: string;
+    status: string; // ou 'PENDING' | 'VERIFIED' | 'REJECTED' si on veut être strict, mais TEXT en DB pour l'instant
+    rejection_reason: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
 // ============================================
 // INSERT TYPES (pour créer de nouveaux enregistrements)
 // ============================================
@@ -228,6 +244,8 @@ export type WalletInsert = Omit<WalletRow, 'id' | 'created_at' | 'updated_at'>;
 
 export type WalletTransactionInsert = Omit<WalletTransactionRow, 'id' | 'created_at'>;
 
+export type DriverDocumentInsert = Omit<DriverDocumentRow, 'id' | 'created_at' | 'updated_at'>;
+
 // ============================================
 // UPDATE TYPES (pour mettre à jour des enregistrements)
 // ============================================
@@ -241,6 +259,8 @@ export type RideUpdate = Partial<Omit<RideRow, 'id' | 'passenger_id' | 'created_
 export type FineUpdate = Partial<Omit<FineRow, 'id' | 'officer_id' | 'created_at' | 'updated_at'>>;
 
 export type WalletUpdate = Partial<Omit<WalletRow, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+
+export type DriverDocumentUpdate = Partial<Omit<DriverDocumentRow, 'id' | 'driver_profile_id' | 'created_at' | 'updated_at'>>;
 
 // ============================================
 // DATABASE SCHEMA TYPE (pour le client Supabase)
