@@ -56,7 +56,7 @@ export default function DriverNavigationScreen({ ride, onStatusUpdate }: DriverN
                         <Navigation className="w-6 h-6 text-black fill-current transform rotate-45" />
                     </div>
                     <div className="flex-1">
-                        <p className="text-xl font-bold text-white">200m</p>
+                        <p className="text-xl font-bold text-white">{ride.distance_km ? `${ride.distance_km} km` : "--"}</p>
                         <p className="text-sm text-white/60 truncate">{getInstruction()}</p>
                     </div>
                 </div>
@@ -81,7 +81,7 @@ export default function DriverNavigationScreen({ ride, onStatusUpdate }: DriverN
                                     {ride.payment_method || 'CASH'}
                                 </div>
                                 <span className="text-[#F0B90B] text-sm font-bold flex items-center gap-1">
-                                    4.8 ★
+                                    {ride.passenger_rating || "--"} ★
                                 </span>
                             </div>
                         </div>

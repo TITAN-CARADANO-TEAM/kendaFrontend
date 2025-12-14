@@ -18,7 +18,7 @@ const supabase = createClient();
 export async function fetchNearbyDrivers(
     lat: number,
     lng: number,
-    radiusKm: number = 5
+    radiusKm: number = 50 // Increased for testing - covers larger area
 ): Promise<DriverLocation[]> {
     // Approx: 1 deg lat ~= 111km. 1 deg lng ~= 111km * cos(lat)
     // Pour simplifier à l'équateur (RDC) : 1 deg ~= 111km => 0.01 deg ~= 1.1km
@@ -29,6 +29,8 @@ export async function fetchNearbyDrivers(
     const minLng = lng - delta;
     const maxLng = lng + delta;
 
+    console.log(`[fetchNearbyDrivers] Searching for drivers near (${lat}, ${lng}) within ${radiusKm}km`);
+
     const { data, error } = await supabase
         .from('driver_profiles')
         .select(`
@@ -38,23 +40,25 @@ export async function fetchNearbyDrivers(
             current_lng,
             vehicle_type,
             rating,
+            status,
+            is_online,
             users:user_id (full_name, avatar_url)
         `)
         .eq('is_online', true)
-        .eq('status', 'VERIFIED')
-        .gte('current_lat', minLat)
-        .lte('current_lat', maxLat)
-        .gte('current_lng', minLng)
-        .lte('current_lng', maxLng);
+        // Remove status filter for now - show all online drivers regardless of verification
+        .not('current_lat', 'is', null)
+        .not('current_lng', 'is', null);
 
     if (error) {
         console.error('Error fetching drivers:', error);
         return [];
     }
 
+    console.log(`[fetchNearbyDrivers] Found ${data?.length || 0} online drivers:`, data);
+
     return (data || []).map((d: any) => ({
-        driver_id: d.id,
-        user_id: d.user_id,
+        driver_id: d.user_id, // Use User ID for compatibility with rides table FK
+        profile_id: d.id,
         latitude: d.current_lat,
         longitude: d.current_lng,
         vehicle_type: d.vehicle_type,

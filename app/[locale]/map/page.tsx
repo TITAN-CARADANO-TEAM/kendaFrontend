@@ -54,17 +54,33 @@ export default function MapPage() {
 
     // Get User Position & Drivers
     useEffect(() => {
+        let intervalId: NodeJS.Timeout;
+
+        const fetchDrivers = async (latitude: number, longitude: number) => {
+            const drivers = await rideService.fetchNearbyDrivers(latitude, longitude);
+            console.log('[MapPage] Fetched drivers:', drivers.length);
+            setNearbyDrivers(drivers);
+        };
+
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 async (pos) => {
                     const { latitude, longitude } = pos.coords;
                     setUserLocation([latitude, longitude]);
-                    const drivers = await rideService.fetchNearbyDrivers(latitude, longitude);
-                    setNearbyDrivers(drivers);
+                    await fetchDrivers(latitude, longitude);
+
+                    // Refresh drivers every 10 seconds
+                    intervalId = setInterval(() => {
+                        fetchDrivers(latitude, longitude);
+                    }, 10000);
                 },
                 (err) => console.error("Loc error:", err)
             );
         }
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
     }, []);
 
     // Mock Ride Data (calculated based on distance for realism)
@@ -114,18 +130,30 @@ export default function MapPage() {
 
             // Subscribe to Ride Updates
             const unsubscribe = rideService.subscribeToRide(result.data.id, async (updatedRide) => {
-                console.log("Ride update received:", updatedRide.status);
+                const ride = updatedRide as any;
+                console.log("📨 [Client] Ride update received:", ride.status);
+                setCurrentRide(updatedRide);
 
-                if (updatedRide.status === 'DRIVER_ASSIGNED' || updatedRide.status === 'DRIVER_ARRIVED') {
+                // Driver accepted the ride
+                if (ride.status === 'ACCEPTED' || ride.status === 'DRIVER_ASSIGNED' || ride.status === 'ARRIVED' || ride.status === 'DRIVER_ARRIVED') {
+                    console.log("✅ [Client] Driver assigned! Switching to RIDE_ACTIVE");
                     // Fetch full details (driver info)
-                    const fullRide = await rideService.getRideStatus(updatedRide.id);
+                    const fullRide = await rideService.getRideStatus(ride.id);
                     if (fullRide.success && fullRide.data) {
                         setCurrentRide(fullRide.data);
-                        setStep('RIDE_ACTIVE');
                     }
-                } else if (updatedRide.status === 'COMPLETED') {
+                    setStep('RIDE_ACTIVE');
+                } else if (ride.status === 'IN_PROGRESS') {
+                    console.log("🚗 [Client] Ride in progress");
+                    setStep('RIDE_ACTIVE');
+                } else if (ride.status === 'COMPLETED') {
+                    console.log("🏁 [Client] Ride completed");
                     setStep('RIDE_COMPLETED');
-                    // unsubscribe handled by cleanup or manually if needed, but here we just switch view
+                } else if (ride.status === 'CANCELLED') {
+                    console.log("❌ [Client] Ride cancelled");
+                    alert("La course a été annulée");
+                    setStep('IDLE');
+                    setCurrentRide(null);
                 }
             });
 
@@ -169,6 +197,8 @@ export default function MapPage() {
                     onDestinationChange={handleDestinationChange}
                     nearbyDrivers={nearbyDrivers}
                     onDriverSelect={handleDriverSelect}
+                    userLocation={userLocation}
+                    trackedDriverId={(step === 'RIDE_ACTIVE' && currentRide?.status !== 'IN_PROGRESS') ? currentRide?.driver_id : null}
                 />
             </div>
 

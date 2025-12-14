@@ -19,7 +19,7 @@ import Image from "next/image";
 import { type Ride } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { createClient } from "@/lib/supabase/client";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -102,6 +102,10 @@ export function DriverDashboard({
     const [activeRide, setActiveRide] = useState<Ride | null>(null); // Accepted ride
     const [showSummary, setShowSummary] = useState(false);
 
+    // Loading States
+    const [isTogglingOnline, setIsTogglingOnline] = useState(false);
+    const [isAcceptingRide, setIsAcceptingRide] = useState(false);
+
     // Derived
     const driverName = propName || user?.user_metadata?.full_name || "Chauffeur";
     const driverAvatar = propAvatar || user?.user_metadata?.avatar_url;
@@ -111,8 +115,26 @@ export function DriverDashboard({
 
     useEffect(() => {
         setIsMounted(true);
-        // Default location (Goma) if GPS fails initially
-        setMyLocation([-1.6585, 29.2205]);
+
+        // Get real GPS position immediately on mount
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    console.log("📍 [Mount] Got initial GPS position:", latitude, longitude);
+                    setMyLocation([latitude, longitude]);
+                },
+                (err) => {
+                    console.error("📍 [Mount] GPS Error, using fallback:", err.message);
+                    // Only use fallback if GPS fails
+                    setMyLocation([-1.6585, 29.2205]);
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        } else {
+            console.warn("📍 [Mount] Geolocation not supported");
+            setMyLocation([-1.6585, 29.2205]);
+        }
     }, []);
 
     useEffect(() => { isOnlineRef.current = isOnline; }, [isOnline]);
@@ -121,6 +143,33 @@ export function DriverDashboard({
     useEffect(() => {
         if (!user) return;
 
+        let pollInterval: NodeJS.Timeout;
+
+        const fetchAvailableRides = async () => {
+            // Only fetch rides from the last 30 minutes to avoid stale data
+            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
+            const { data, error } = await supabase
+                .from('rides')
+                .select('*')
+                .eq('status', 'SEARCHING')
+                .gte('created_at', thirtyMinutesAgo)
+                .not('pickup_lat', 'is', null)
+                .not('pickup_lng', 'is', null);
+
+            if (error) {
+                console.error('[fetchAvailableRides] Error:', error);
+                return;
+            }
+
+            console.log('[fetchAvailableRides] Found', data?.length || 0, 'rides');
+            // Only update if no active ride
+            setAvailableRides(prev => {
+                // If we already have selected ride, ensure it is kept or updated
+                return data || [];
+            });
+        };
+
         const init = async () => {
             // Check Profile status
             const { data: profile } = await supabase.from('driver_profiles').select('is_online, current_lat, current_lng').eq('user_id', user.id).maybeSingle();
@@ -128,11 +177,12 @@ export function DriverDashboard({
             if (profile) {
                 const p = profile as any;
                 setIsOnline(p.is_online || false);
-                if (p.current_lat && p.current_lng) {
+                // Use saved location from DB if available and we don't have GPS yet
+                if (p.current_lat && p.current_lng && !myLocation) {
+                    console.log("📍 [Init] Using saved location from DB:", p.current_lat, p.current_lng);
                     setMyLocation([p.current_lat, p.current_lng]);
                 }
             }
-
 
             // Check for Active Ride
             const { data: currentRide } = await supabase
@@ -146,19 +196,19 @@ export function DriverDashboard({
                 setActiveRide(currentRide as Ride);
             }
 
-            // Listen for available rides
-            fetchAvailableRides();
-        };
+            // Listen for available rides immediately
+            await fetchAvailableRides();
 
-        const fetchAvailableRides = async () => {
-            const { data } = await supabase
-                .from('rides')
-                .select('*')
-                .eq('status', 'SEARCHING');
-            if (data) setAvailableRides(data);
+            // Fallback: Poll every 5 seconds to ensure we don't miss any rides
+            pollInterval = setInterval(fetchAvailableRides, 5000);
         };
 
         init();
+
+        return () => {
+            if (pollInterval) clearInterval(pollInterval);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
 
@@ -166,26 +216,63 @@ export function DriverDashboard({
     useEffect(() => {
         if (!isOnline || !user) return;
 
-        console.log("📍 Starting GPS Tracking...");
-        const watchId = navigator.geolocation.watchPosition(
-            async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                setMyLocation([latitude, longitude]); // Update local state for Map
+        console.log("📍 Starting continuous GPS Tracking...");
 
-                // Update DB
-                await (supabase.from('driver_profiles') as any)
+        // Function to update location in DB
+        const updateLocationInDB = async (latitude: number, longitude: number) => {
+            try {
+                const { error, data } = await (supabase
+                    .from('driver_profiles') as any)
                     .update({
                         current_lat: latitude,
                         current_lng: longitude,
                         updated_at: new Date().toISOString()
                     })
-                    .eq('user_id', user.id);
+                    .eq('user_id', user.id)
+                    .select();
+
+                if (error) {
+                    console.error("📍 [DB] Update error:", error.message);
+                } else {
+                    console.log("📍 [DB] Location updated successfully:", { latitude, longitude });
+                }
+            } catch (e) {
+                console.error("📍 [DB] Exception:", e);
+            }
+        };
+
+        // Watch position for real-time updates
+        const watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const { latitude, longitude, accuracy } = pos.coords;
+                console.log(`📍 [GPS] Position update: (${latitude.toFixed(6)}, ${longitude.toFixed(6)}) Accuracy: ${accuracy?.toFixed(0)}m`);
+                setMyLocation([latitude, longitude]);
+                updateLocationInDB(latitude, longitude);
             },
-            (err) => console.error("GPS Error:", err),
-            { enableHighAccuracy: true }
+            (err) => console.error("📍 [GPS] Error:", err.code, err.message),
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
         );
 
-        return () => navigator.geolocation.clearWatch(watchId);
+        // Fallback: Also update on interval in case watchPosition doesn't fire frequently
+        const intervalId = setInterval(() => {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    console.log(`📍 [Interval] Pushing location: (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`);
+                    setMyLocation([latitude, longitude]);
+                    updateLocationInDB(latitude, longitude);
+                },
+                (err) => console.error("📍 [Interval] GPS Error:", err.message),
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }, 15000); // Every 15 seconds
+
+        return () => {
+            console.log("📍 Stopping GPS Tracking");
+            navigator.geolocation.clearWatch(watchId);
+            clearInterval(intervalId);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOnline, user]);
 
 
@@ -194,6 +281,7 @@ export function DriverDashboard({
         if (!user) return;
 
         // Channel for RIDES (Clients)
+        console.log("🔔 [Driver] Setting up realtime subscription for rides...");
         const ridesChannel = supabase.channel('radar-rides')
             .on('postgres_changes', {
                 event: '*',
@@ -204,10 +292,18 @@ export function DriverDashboard({
                 const oldRide = payload.old as any;
                 const eventType = payload.eventType; // 'INSERT', 'UPDATE', 'DELETE'
 
+                console.log(`📥 [Driver] Realtime event: ${eventType}`, {
+                    id: newRide?.id?.slice(0, 8),
+                    status: newRide?.status,
+                    driver_id: newRide?.driver_id,
+                    pickup_lat: newRide?.pickup_lat
+                });
+
                 // Logic for Targeted Rides (Direct Requests)
                 if ((eventType === 'INSERT' || eventType === 'UPDATE') && newRide.status === 'SEARCHING') {
                     if (newRide.driver_id === user.id) {
                         // IT'S FOR ME!
+                        console.log("🎯 [Driver] TARGETED RIDE - This is for me!");
                         setSelectedRide({ ...newRide, isTargeted: true });
                         // Also add to map for visual confirmation if dismissed
                         setAvailableRides((prev: any[]) => {
@@ -217,13 +313,20 @@ export function DriverDashboard({
                         return;
                     } else if (newRide.driver_id && newRide.driver_id !== user.id) {
                         // For someone else - Ignore
+                        console.log("👤 [Driver] Ride assigned to another driver, ignoring");
                         return;
                     }
                 }
 
                 if (eventType === 'INSERT') {
-                    if (newRide.status === 'SEARCHING' && !newRide.driver_id) {
-                        setAvailableRides((prev: any[]) => [...prev, newRide]);
+                    // New ride request - add if it's open for anyone
+                    if (newRide.status === 'SEARCHING' && newRide.pickup_lat && newRide.pickup_lng) {
+                        console.log("🆕 [Driver] New ride request added to map!");
+                        setAvailableRides((prev: any[]) => {
+                            // Avoid duplicates
+                            if (prev.find(r => r.id === newRide.id)) return prev;
+                            return [...prev, newRide];
+                        });
                     }
                 } else if (eventType === 'UPDATE') {
                     if (newRide.status === 'SEARCHING') {
@@ -281,13 +384,55 @@ export function DriverDashboard({
             supabase.removeChannel(ridesChannel);
             supabase.removeChannel(driversChannel);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, selectedRide]);
+
+    // --- 3b. ROUTE CALCULATION (Navigation) ---
+    const [routePath, setRoutePath] = useState<[number, number][]>([]);
+
+    useEffect(() => {
+        const ride = activeRide as any;
+        if (!ride || !myLocation) {
+            setRoutePath([]);
+            return;
+        }
+
+        const fetchRoute = async (targetLat: number, targetLng: number) => {
+            try {
+                const start = `${myLocation[1]},${myLocation[0]}`;
+                const end = `${targetLng},${targetLat}`;
+                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${start};${end}?overview=full&geometries=geojson`);
+                const data = await response.json();
+                if (data.routes?.[0]) {
+                    const coords = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
+                    setRoutePath(coords);
+                }
+            } catch (e) {
+                console.error("Route Error", e);
+                setRoutePath([[myLocation[0], myLocation[1]], [targetLat, targetLng]]);
+            }
+        };
+
+        if (ride.status === 'ACCEPTED' || ride.status === 'ARRIVED') {
+            if (ride.pickup_lat && ride.pickup_lng) {
+                fetchRoute(ride.pickup_lat, ride.pickup_lng);
+            }
+        } else if (ride.status === 'IN_PROGRESS') {
+            if (ride.dest_lat && ride.dest_lng) {
+                fetchRoute(ride.dest_lat, ride.dest_lng);
+            }
+        } else {
+            setRoutePath([]);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeRide, myLocation]);
 
 
     // --- 4. HANDLERS ---
 
     const handleToggleOnline = async () => {
-        if (!user) return;
+        if (!user || isTogglingOnline) return;
+        setIsTogglingOnline(true);
         const newStatus = !isOnline;
         setIsOnline(newStatus);
 
@@ -305,10 +450,12 @@ export function DriverDashboard({
             await (supabase.from('driver_profiles') as any).update({ is_online: false }).eq('user_id', user.id);
             setAvailableRides([]); // Clear map when offline
         }
+        setIsTogglingOnline(false);
     };
 
     const handleAcceptRide = async () => {
-        if (!selectedRide || !user) return;
+        if (!selectedRide || !user || isAcceptingRide) return;
+        setIsAcceptingRide(true);
 
         // Atomic Update: Only update if status is still 'SEARCHING'
         // This prevents race conditions where another driver accepted it 1ms ago.
@@ -334,6 +481,7 @@ export function DriverDashboard({
             setActiveRide(data[0] as Ride);
             setSelectedRide(null);
         }
+        setIsAcceptingRide(false);
     };
 
     const handleStatusUpdate = async (newStatus: string) => {
@@ -361,7 +509,7 @@ export function DriverDashboard({
     if (!isMounted) return <div className="h-full w-full bg-black" />;
 
     if (showSummary) {
-        return <DriverRideSummary ride={activeRide || {}} onClose={handleCloseSummary} />;
+        return <DriverRideSummary ride={(activeRide as any) || {}} onClose={handleCloseSummary} />;
     }
 
     if (activeRide && activeRide.status !== 'COMPLETED') {
@@ -402,8 +550,14 @@ export function DriverDashboard({
                             : "bg-yellow-500 text-black border-yellow-400 hover:bg-yellow-400"
                     )}
                 >
-                    <Power size={20} />
-                    <span>{isOnline ? "STOP" : "GO !"}</span>
+                    {isTogglingOnline ? (
+                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <>
+                            <Power size={20} />
+                            <span>{isOnline ? "STOP" : "GO !"}</span>
+                        </>
+                    )}
                 </button>
             </div>
 
@@ -440,17 +594,34 @@ export function DriverDashboard({
                         ) : null
                     ))}
 
-                    {/* Available Rides (Clients) */}
-                    {isOnline && availableRides.map((ride) => (
-                        <Marker
-                            key={ride.id}
-                            position={[ride.pickup_lat, ride.pickup_lng]}
-                            icon={createCustomIcon('client')}
-                            eventHandlers={{
-                                click: () => setSelectedRide(ride)
-                            }}
-                        />
-                    ))}
+                    {/* Active Route & Target */}
+                    {activeRide && routePath.length > 0 && (
+                        <Polyline positions={routePath as L.LatLngExpression[]} pathOptions={{ color: "#F0B90B", weight: 5 }} />
+                    )}
+                    {activeRide && ((activeRide as any).status === 'ACCEPTED' || (activeRide as any).status === 'ARRIVED') && (activeRide as any).pickup_lat && (
+                        <Marker position={[(activeRide as any).pickup_lat, (activeRide as any).pickup_lng]} icon={createCustomIcon('client')}>
+                            <Popup>Client (Prise en charge)</Popup>
+                        </Marker>
+                    )}
+                    {activeRide && (activeRide as any).status === 'IN_PROGRESS' && (activeRide as any).dest_lat && (
+                        <Marker position={[(activeRide as any).dest_lat, (activeRide as any).dest_lng]} icon={createCustomIcon('client')}>
+                            <Popup>Destination</Popup>
+                        </Marker>
+                    )}
+
+                    {/* Available Rides (Clients) - Only show when online AND no active ride */}
+                    {isOnline && !activeRide && availableRides
+                        .filter(ride => ride.pickup_lat && ride.pickup_lng)
+                        .map((ride) => (
+                            <Marker
+                                key={ride.id}
+                                position={[ride.pickup_lat, ride.pickup_lng]}
+                                icon={createCustomIcon('client')}
+                                eventHandlers={{
+                                    click: () => setSelectedRide(ride)
+                                }}
+                            />
+                        ))}
                 </MapContainer>
             </div>
 
@@ -537,7 +708,7 @@ export function DriverDashboard({
                                     <div className="flex gap-4 mt-2">
                                         <div className="flex items-center gap-1.5 bg-neutral-900 px-2 py-1 rounded text-neutral-300 text-xs">
                                             <Clock size={12} />
-                                            ~15 min
+                                            {selectedRide.duration_minutes ? `~${selectedRide.duration_minutes} min` : "-- min"}
                                         </div>
                                         <div className="flex items-center gap-1.5 bg-neutral-900 px-2 py-1 rounded text-neutral-300 text-xs">
                                             <Navigation size={12} />
@@ -550,10 +721,18 @@ export function DriverDashboard({
 
                         <div className="flex gap-3">
                             <Button
-                                className="flex-1 bg-[#22C55E] hover:bg-[#16A34A] text-white font-bold h-14 rounded-xl text-lg shadow-[0_4px_20px_rgba(34,197,94,0.3)]"
+                                className="flex-1 bg-[#22C55E] hover:bg-[#16A34A] text-white font-bold h-14 rounded-xl text-lg shadow-[0_4px_20px_rgba(34,197,94,0.3)] disabled:opacity-50"
                                 onClick={handleAcceptRide}
+                                disabled={isAcceptingRide}
                             >
-                                ACCEPTER LA COURSE
+                                {isAcceptingRide ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        <span>ACCEPTATION...</span>
+                                    </div>
+                                ) : (
+                                    "ACCEPTER LA COURSE"
+                                )}
                             </Button>
                         </div>
                     </motion.div>

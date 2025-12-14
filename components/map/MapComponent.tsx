@@ -103,11 +103,20 @@ interface MapComponentProps {
     /** Nearby drivers to display on map - provided by parent component */
     nearbyDrivers?: DriverLocation[];
     onDriverSelect?: (driver: DriverLocation) => void;
+    userLocation?: [number, number] | null;
+    routeStart?: [number, number] | null;
+    routeEnd?: [number, number] | null;
+    trackedDriverId?: string | null;
 }
 
-const MapComponent = ({ onDestinationChange, nearbyDrivers = [], onDriverSelect }: MapComponentProps) => {
+const MapComponent = (props: MapComponentProps) => {
+    const { onDestinationChange, nearbyDrivers = [], onDriverSelect, userLocation, trackedDriverId } = props;
     const t = useTranslations('Ride');
-    const [position, setPosition] = useState<[number, number] | null>(null);
+    const [internalPosition, setInternalPosition] = useState<[number, number] | null>(null);
+
+    // Use prop if available, otherwise internal state
+    const position = userLocation ?? internalPosition;
+
     const [destination, setDestination] = useState<[number, number] | null>(null);
     const [drivers, setDrivers] = useState<DriverLocation[]>(nearbyDrivers);
     const supabase = createClient();
@@ -119,7 +128,8 @@ const MapComponent = ({ onDestinationChange, nearbyDrivers = [], onDriverSelect 
         }
     }, [nearbyDrivers]);
 
-    // Realtime Driver Updates
+    // ... (Driver Updates useEffect remains same) ...
+
     useEffect(() => {
         const channel = supabase
             .channel('driver_updates')
@@ -134,18 +144,21 @@ const MapComponent = ({ onDestinationChange, nearbyDrivers = [], onDriverSelect 
 
                 setDrivers(currentDrivers => {
                     // HANDLE DELETE or Offline
+                    // Note: We use user_id as driver_id for consistency with rideService
                     if (eventType === 'DELETE' || (eventType === 'UPDATE' && newData.is_online === false)) {
-                        const targetId = oldData.id || newData.id;
-                        return currentDrivers.filter(d => d.driver_id !== targetId);
+                        const targetUserId = oldData.user_id || newData.user_id;
+                        return currentDrivers.filter(d => d.driver_id !== targetUserId);
                     }
 
                     // HANDLE UPDATE or INSERT
                     if (newData && newData.is_online === true && newData.current_lat && newData.current_lng) {
-                        const exists = currentDrivers.find(d => d.driver_id === newData.id);
+                         const targetUserId = newData.user_id;
+                        const exists = currentDrivers.find(d => d.driver_id === targetUserId);
+                        
                         if (exists) {
                             // Update existing
                             return currentDrivers.map(d =>
-                                d.driver_id === newData.id
+                                d.driver_id === targetUserId
                                     ? {
                                         ...d,
                                         latitude: newData.current_lat,
@@ -157,10 +170,11 @@ const MapComponent = ({ onDestinationChange, nearbyDrivers = [], onDriverSelect 
                         } else {
                             // Add new
                             return [...currentDrivers, {
-                                driver_id: newData.id,
+                                driver_id: newData.user_id, // Use User ID
+                                profile_id: newData.id,
                                 latitude: newData.current_lat,
                                 longitude: newData.current_lng,
-                                driver_name: newData.full_name || 'Chauffeur',
+                                driver_name: newData.full_name || 'Chauffeur', // Note: full_name might not be in profile table directly, often joined query needed.
                                 rating: newData.rating || 5.0,
                                 vehicle_type: newData.vehicle_type
                             } as DriverLocation];
@@ -178,28 +192,29 @@ const MapComponent = ({ onDestinationChange, nearbyDrivers = [], onDriverSelect 
     }, []);
 
     useEffect(() => {
-        // Get User Location
+        // If userLocation is provided by parent, do not fetch internally unless it's null and we want to try anyway?
+        // Actually, if parent provides it, rely on parent.
+        if (userLocation !== undefined) return;
+
+        // Get User Location Internal Fallback
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
                     const userPos: [number, number] = [latitude, longitude];
-                    setPosition(userPos);
-
-                    // TODO: Connect to Supabase - fetch nearby drivers based on user position
-                    // const response = await driverService.getNearbyDrivers(latitude, longitude);
+                    setInternalPosition(userPos);
                 },
                 (err) => {
                     console.error("Error getting location:", err);
                     // Default fallback (Goma, RDC)
-                    setPosition([-1.6777, 29.2285]);
+                    setInternalPosition([-1.6777, 29.2285]);
                 }
             );
         } else {
             // Fallback if geolocation not supported (Goma, RDC)
-            setPosition([-1.6777, 29.2285]);
+            setInternalPosition([-1.6777, 29.2285]);
         }
-    }, []);
+    }, [userLocation]);
 
     // Calculate distance between two points (Haversine formula)
     const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -224,13 +239,30 @@ const MapComponent = ({ onDestinationChange, nearbyDrivers = [], onDriverSelect 
     // Calculate route path using OSRM API
     const [routePath, setRoutePath] = useState<[number, number][]>([]);
 
+    // Tracked Driver Logic
+    const trackedDriver = drivers.find(d => d.driver_id === trackedDriverId);
+
+    // Calculate Route Points
+    // Default: Props override -> User Position -> Null
+    let startPoint = props.routeStart || position;
+    // Default: Props override -> User Destination -> Null
+    let endPoint = props.routeEnd || destination;
+
+    // SCENARIO: Tracking Driver Approach (e.g. Passenger waiting)
+    // If we have a tracked driver ID, and we found them on map, and we know our own position:
+    // Route from Driver -> User
+    if (trackedDriverId && trackedDriver && position && !props.routeStart) {
+        startPoint = [trackedDriver.latitude, trackedDriver.longitude];
+        endPoint = position;
+    }
+
     useEffect(() => {
-        if (position && destination) {
+        if (startPoint && endPoint) {
             const fetchRoute = async () => {
                 try {
                     // OSRM requires coordinates in [lon, lat] format
-                    const start = `${position[1]},${position[0]}`;
-                    const end = `${destination[1]},${destination[0]}`;
+                    const start = `${startPoint[1]},${startPoint[0]}`;
+                    const end = `${endPoint[1]},${endPoint[0]}`;
 
                     const response = await fetch(
                         `https://router.project-osrm.org/route/v1/driving/${start};${end}?overview=full&geometries=geojson`
@@ -244,13 +276,16 @@ const MapComponent = ({ onDestinationChange, nearbyDrivers = [], onDriverSelect 
                         setRoutePath(coordinates);
 
                         // Update distance based on actual route
-                        const routeDistanceKm = data.routes[0].distance / 1000;
-                        onDestinationChange?.(destination, routeDistanceKm);
+                        // Only report distance change if we are using the main destination, not a custom override
+                        if (!props.routeEnd) {
+                            const routeDistanceKm = data.routes[0].distance / 1000;
+                            onDestinationChange?.(endPoint, routeDistanceKm);
+                        }
                     }
                 } catch (error) {
                     console.error("Error fetching route:", error);
                     // Fallback to straight line if API fails
-                    setRoutePath([position, destination]);
+                    setRoutePath([startPoint, endPoint]);
                 }
             };
 
@@ -259,7 +294,7 @@ const MapComponent = ({ onDestinationChange, nearbyDrivers = [], onDriverSelect 
             setRoutePath([]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [position, destination]);
+    }, [startPoint, endPoint]);
 
     if (!position) {
         return (
