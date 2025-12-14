@@ -9,8 +9,13 @@ import type { Ride, DriverStats } from "@/types";
 // TODO: Import service when ready
 // import { getDriverRideHistory, getDriverStats } from "@/services/driverService";
 
+import { useAuth } from "@/hooks/useAuth";
+import { createClient } from "@/lib/supabase/client";
+
 export default function DriverHistoryPage() {
     const t = useTranslations('Profile');
+    const { user } = useAuth();
+    const supabase = createClient();
 
     // State for data from backend
     const [rides, setRides] = useState<Ride[]>([]);
@@ -18,28 +23,49 @@ export default function DriverHistoryPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // TODO: Connect to Supabase
-        // const fetchData = async () => {
-        //     setIsLoading(true);
-        //     try {
-        //         const [ridesResponse, statsResponse] = await Promise.all([
-        //             getDriverRideHistory(userId),
-        //             getDriverStats(userId)
-        //         ]);
-        //         if (ridesResponse.data) setRides(ridesResponse.data);
-        //         if (statsResponse.data) setStats(statsResponse.data);
-        //     } catch (error) {
-        //         console.error('Failed to fetch driver history:', error);
-        //     } finally {
-        //         setIsLoading(false);
-        //     }
-        // };
-        // fetchData();
+        if (!user) return;
 
-        // Simulate loading for now
-        const timer = setTimeout(() => setIsLoading(false), 1000);
-        return () => clearTimeout(timer);
-    }, []);
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch Rides
+                const { data: ridesData, error } = await supabase
+                    .from('rides')
+                    .select('*')
+                    .eq('driver_id', user.id)
+                    .order('created_at', { ascending: false });
+
+                if (ridesData) {
+                    setRides(ridesData as Ride[]);
+
+                    // Calculate Stats
+                    const total = ridesData.length;
+                    const completed = ridesData.filter((r: any) => r.status === 'COMPLETED').length;
+                    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                    // Fetch Profile for Rating
+                    const { data: profile } = await supabase
+                        .from('driver_profiles')
+                        .select('rating')
+                        .eq('user_id', user.id)
+                        .single();
+
+                    setStats({
+                        total_rides: total,
+                        completion_rate: completionRate,
+                        average_rating: profile?.rating || 5.0,
+                        earnings: 0 // Not used in summary directly in this view
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to fetch driver history:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [user]);
 
     // Format ride for display
     const formatRide = (ride: Ride) => {
@@ -48,12 +74,12 @@ export default function DriverHistoryPage() {
             id: ride.id,
             date: rideDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
             time: rideDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            from: ride.pickup_address || 'Point de départ',
-            to: ride.destination_address || 'Destination',
+            from: ride.pickup_address || t('startPoint') || 'Point de départ',
+            to: ride.dest_address || ride.destination_address || t('destination') || 'Destination', // Handle varying field names
             distance: ride.distance_km ? `${ride.distance_km} km` : '--',
             duration: ride.duration_minutes ? `${ride.duration_minutes} min` : '--',
-            amount: `${(ride.final_price || ride.estimated_price).toLocaleString()} ${ride.currency}`,
-            rating: ride.rating?.rating || null,
+            amount: `${(ride.final_price || ride.price || ride.estimated_price || 0).toLocaleString()} FC`,
+            rating: 5, // Default as individual ride ratings not fully linked yet
             status: ride.status
         };
     };

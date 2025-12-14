@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     UserCog,
     Star,
@@ -42,33 +42,81 @@ interface Document {
     icon: React.ReactNode;
 }
 
+import { useAuth } from "@/hooks/useAuth";
+import { createClient } from "@/lib/supabase/client";
+
 export default function DriverProfilePage() {
+    const { user } = useAuth();
+    const supabase = createClient();
+
     // Preferences state
     const [acceptLongDistance, setAcceptLongDistance] = useState(true);
     const [acceptCashPayment, setAcceptCashPayment] = useState(true);
     const [acceptCryptoPayment, setAcceptCryptoPayment] = useState(false);
 
-    const driverInfo = {
-        name: "Alexandre Kahindo",
-        phone: "+243 99 123 4567",
-        email: "alexandre.k@gmail.com",
-        city: "Goma, Nord-Kivu",
-        rating: 4.9,
-        totalRides: 156,
-        totalKm: 2340,
-        memberSince: "Novembre 2025",
-        walletAddress: "addr1qx...8f3k",
-        isVerifiedOnChain: true,
+    const [driverInfo, setDriverInfo] = useState<any>({
+        name: "Chargement...",
+        phone: "...",
+        email: "...",
+        city: "...",
+        rating: 5.0,
+        totalRides: 0,
+        totalKm: 0,
+        memberSince: "...",
+        walletAddress: "...",
+        isVerifiedOnChain: false,
         vehicle: {
-            type: "Moto-Taxi",
-            brand: "Honda",
-            model: "CBR 125R",
-            year: "2022",
-            plate: "NK 1234 AB",
-            color: "Noir",
-            isValidated: true
+            type: "...",
+            brand: "...",
+            model: "...",
+            year: "...",
+            plate: "...",
+            color: "...",
+            isValidated: false
         }
-    };
+    });
+
+    useEffect(() => {
+        if (!user) return;
+        const fetchProfile = async () => {
+            // Fetch Rides count for stats
+            const { count: rideCount } = await supabase
+                .from('rides')
+                .select('*', { count: 'exact', head: true })
+                .eq('driver_id', user.id);
+
+            const { data } = await supabase
+                .from('driver_profiles')
+                .select('*')
+                .eq('user_id', user.id)
+                .single();
+
+            if (data) {
+                setDriverInfo({
+                    name: user.user_metadata?.full_name || "Chauffeur",
+                    phone: user.phone || "Non renseigné",
+                    email: user.email,
+                    city: "Goma, Nord-Kivu", // Defaut
+                    rating: data.rating || 5.0,
+                    totalRides: rideCount || 0,
+                    totalKm: 0, // Placeholder
+                    memberSince: new Date(user.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+                    walletAddress: "addr1...", // Placeholder
+                    isVerifiedOnChain: data.status === 'VERIFIED',
+                    vehicle: {
+                        type: data.vehicle_type || "Taxi",
+                        brand: data.vehicle_brand || "-",
+                        model: data.vehicle_model || "-",
+                        year: data.vehicle_year?.toString() || "-",
+                        plate: data.license_plate || "-",
+                        color: data.vehicle_color || "-",
+                        isValidated: data.status === 'VERIFIED'
+                    }
+                });
+            }
+        };
+        fetchProfile();
+    }, [user]);
 
     const documents: Document[] = [
         {

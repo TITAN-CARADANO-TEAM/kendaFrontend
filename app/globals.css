@@ -17,7 +17,12 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heading;
   }
 }
@@ -26,15 +31,29 @@
   .text-balance {
     text-wrap: balance;
   }
-  
+
   /* Safe Area Utilities */
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
+
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
   .h-safe-screen {
     height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  /* Global Hide Scrollbar */
+  * {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
   }
 }

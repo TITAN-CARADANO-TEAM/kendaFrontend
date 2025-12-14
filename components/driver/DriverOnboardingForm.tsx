@@ -110,7 +110,7 @@ export function DriverOnboardingForm({
     const handleSubmit = async () => {
         setIsSubmitting(true);
         setLoadingMessage(t('creatingProfile') || "Création du profil...");
-        const supabase = createClient();
+        const supabase: any = createClient();
 
         try {
             // 1. Get current user
@@ -138,7 +138,7 @@ export function DriverOnboardingForm({
                         license_plate: formData.licensePlate,
                         status: 'PENDING',
                         is_online: false
-                    })
+                    } as any)
                     .select()
                     .single();
 

@@ -1,45 +1,106 @@
-/**
- * Ride Service
- * Gère toutes les opérations liées aux courses
- */
-
+import { createClient } from '@/lib/supabase/client';
 import type {
     Ride,
     RideRequest,
     RideEstimate,
     RideRating,
     ApiResponse,
-    PaginatedResponse
+    PaginatedResponse,
+    DriverLocation
 } from '@/types';
 
-// TODO: Import Supabase client when ready
-// import { supabase } from '@/lib/supabase';
+// Instance Supabase unique pour le service
+const supabase = createClient();
+
+/**
+ * Récupère les chauffeurs à proximité (Bounding Box simple)
+ */
+export async function fetchNearbyDrivers(
+    lat: number,
+    lng: number,
+    radiusKm: number = 5
+): Promise<DriverLocation[]> {
+    // Approx: 1 deg lat ~= 111km. 1 deg lng ~= 111km * cos(lat)
+    // Pour simplifier à l'équateur (RDC) : 1 deg ~= 111km => 0.01 deg ~= 1.1km
+    const delta = radiusKm / 111;
+
+    const minLat = lat - delta;
+    const maxLat = lat + delta;
+    const minLng = lng - delta;
+    const maxLng = lng + delta;
+
+    const { data, error } = await supabase
+        .from('driver_profiles')
+        .select(`
+            id,
+            user_id,
+            current_lat,
+            current_lng,
+            vehicle_type,
+            rating,
+            users:user_id (full_name, avatar_url)
+        `)
+        .eq('is_online', true)
+        .eq('status', 'VERIFIED')
+        .gte('current_lat', minLat)
+        .lte('current_lat', maxLat)
+        .gte('current_lng', minLng)
+        .lte('current_lng', maxLng);
+
+    if (error) {
+        console.error('Error fetching drivers:', error);
+        return [];
+    }
+
+    return (data || []).map((d: any) => ({
+        driver_id: d.id,
+        user_id: d.user_id,
+        latitude: d.current_lat,
+        longitude: d.current_lng,
+        vehicle_type: d.vehicle_type,
+        driver_name: d.users?.full_name || 'Chauffeur',
+        rating: d.rating
+    }));
+}
 
 /**
  * Crée une nouvelle demande de course
  */
-export async function createRide(request: RideRequest): Promise<ApiResponse<Ride>> {
-    // TODO: Connect to Supabase
-    // const { data, error } = await supabase
-    //     .from('rides')
-    //     .insert({
-    //         passenger_id: currentUser.id,
-    //         pickup_latitude: request.pickup_latitude,
-    //         pickup_longitude: request.pickup_longitude,
-    //         destination_latitude: request.destination_latitude,
-    //         destination_longitude: request.destination_longitude,
-    //         status: 'SEARCHING',
-    //         ...
-    //     })
-    //     .select()
-    //     .single();
+export async function createRide(request: RideRequest & { passenger_id: string, price: number, distance: number, duration: number, specificDriverId?: string }): Promise<ApiResponse<Ride>> {
+    const { data, error } = await supabase
+        .from('rides')
+        .insert({
+            passenger_id: request.passenger_id,
+            pickup_lat: request.pickup_latitude,
+            pickup_lng: request.pickup_longitude,
+            pickup_address: request.pickup_address,
+            dest_lat: request.destination_latitude,
+            dest_lng: request.destination_longitude,
+            dest_address: request.destination_address,
+            vehicle_type: (request as any).vehicle_type || 'TAXI',
+            driver_id: request.specificDriverId || null,
+            price: request.price,
+            status: 'SEARCHING',
+            distance_km: request.distance,
+            duration_minutes: request.duration,
+            requested_at: new Date().toISOString()
+        } as any)
+        .select()
+        .single();
 
-    console.warn('[rideService] createRide: Not connected to backend');
+    if (error) {
+        console.error('Error creating ride:', error);
+        return {
+            data: null,
+            error: error.message,
+            success: false
+        };
+    }
 
     return {
-        data: null,
-        error: 'Backend not connected',
-        success: false
+        data: data as Ride,
+        error: null,
+        success: true
     };
 }
 
@@ -47,23 +108,28 @@ export async function createRide(request: RideRequest): Promise<ApiResponse<Ride
  * Obtient le statut d'une course en temps réel
  */
 export async function getRideStatus(rideId: string): Promise<ApiResponse<Ride>> {
-    // TODO: Connect to Supabase
-    // const { data, error } = await supabase
-    //     .from('rides')
-    //     .select(`
-    //         *,
-    //         driver:driver_id(id, full_name, avatar_url),
-    //         driver_profile:driver_profiles!driver_id(vehicle_model, license_plate, average_rating)
-    //     `)
-    //     .eq('id', rideId)
-    //     .single();
+    const { data, error } = await supabase
+        .from('rides')
+        .select(`
+            *,
+            driver:driver_id(id, full_name, avatar_url, phone),
+            driver_profile:driver_profiles!driver_id(vehicle_model, license_plate, rating, vehicle_brand, vehicle_color)
+        `)
+        .eq('id', rideId)
+        .single();
 
-    console.warn('[rideService] getRideStatus: Not connected to backend');
+    if (error) {
+        return {
+            data: null,
+            error: error.message,
+            success: false
+        };
+    }
 
     return {
-        data: null,
-        error: 'Backend not connected',
-        success: false
+        data: data as unknown as Ride, // Cast nécessaire selon la structure retournée
+        error: null,
+        success: true
     };
 }
 
@@ -77,22 +143,29 @@ export async function getRideHistory(
     const page = options?.page ?? 1;
     const limit = options?.limit ?? 10;
 
-    // TODO: Connect to Supabase
-    // const { data, error, count } = await supabase
-    //     .from('rides')
-    //     .select('*, driver:driver_id(full_name, avatar_url)', { count: 'exact' })
-    //     .or(`passenger_id.eq.${userId},driver_id.eq.${userId}`)
-    //     .order('created_at', { ascending: false })
-    //     .range((page - 1) * limit, page * limit - 1);
+    const { data, error, count } = await supabase
+        .from('rides')
+        .select('*, driver:driver_id(full_name, avatar_url)', { count: 'exact' })
+        .or(`passenger_id.eq.${userId},driver_id.eq.${userId}`)
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
 
-    console.warn('[rideService] getRideHistory: Not connected to backend');
+    if (error) {
+        return {
+            data: [],
+            total: 0,
+            page,
+            limit,
+            has_more: false
+        };
+    }
 
     return {
-        data: [],
-        total: 0,
+        data: data as Ride[],
+        total: count || 0,
         page,
         limit,
-        has_more: false
+        has_more: (count || 0) > page * limit
     };
 }
 
@@ -116,12 +189,12 @@ export async function estimateRide(
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance_km = R * c;
 
-    // TODO: Get city pricing from Supabase
-    const BASE_PRICE = 2000;
-    const PRICE_PER_KM = 500;
+    // TODO: Get city pricing from Supabase or Config
+    const BASE_PRICE = 2000; // FC
+    const PRICE_PER_KM = 800; // Augmenté pour réalisme
 
     const estimated_price = Math.round(BASE_PRICE + (PRICE_PER_KM * distance_km));
-    const duration_minutes = Math.ceil(distance_km * 2); // ~2 min/km en ville
+    const duration_minutes = Math.ceil(distance_km * 3); // ~3 min/km avec trafic moyen
 
     return {
         data: {
@@ -140,28 +213,25 @@ export async function estimateRide(
  */
 export async function cancelRide(
     rideId: string,
-    reason?: string
+    reason?: string,
+    userId?: string
 ): Promise<ApiResponse<Ride>> {
-    // TODO: Connect to Supabase
-    // const { data, error } = await supabase
-    //     .from('rides')
-    //     .update({
-    //         status: 'CANCELLED',
-    //         cancellation_reason: reason,
-    //         cancelled_by: currentUser.id,
-    //         cancelled_at: new Date().toISOString()
-    //     })
-    //     .eq('id', rideId)
-    //     .select()
-    //     .single();
+    const { data, error } = await (supabase
+        .from('rides') as any)
+        .update({
+            status: 'CANCELLED',
+            cancellation_reason: reason,
+            cancelled_at: new Date().toISOString()
+            // cancelled_by n'existe pas dans le schéma actuel, on omet
+        })
+        .eq('id', rideId)
+        .select()
+        .single();
 
-    console.warn('[rideService] cancelRide: Not connected to backend');
-
-    return {
-        data: null,
-        error: 'Backend not connected',
-        success: false
-    };
+    if (error) {
+        return { data: null, error: error.message, success: false };
+    }
+    return { data: data as Ride, error: null, success: true };
 }
 
 /**
@@ -172,25 +242,33 @@ export async function rateRide(
     rating: number,
     comment?: string
 ): Promise<ApiResponse<RideRating>> {
-    // TODO: Connect to Supabase
-    // const { data, error } = await supabase
-    //     .from('ride_ratings')
-    //     .insert({
-    //         ride_id: rideId,
-    //         rated_by: currentUser.id,
-    //         rated_user: driverId,
-    //         rating,
-    //         comment
-    //     })
-    //     .select()
-    //     .single();
+    // Table ride_ratings non implémentée dans les types vus, mais supposée existante ou update rides
+    // On update la table rides directement si ratings intégrés pour simplifier l'exemple
 
-    console.warn('[rideService] rateRide: Not connected to backend');
+    // Supposons update sur rides pour l'instant :
+    const { data, error } = await (supabase
+        .from('rides') as any)
+        .update({
+            passenger_rating: rating,
+            passenger_comment: comment
+        })
+        .eq('id', rideId)
+        .select()
+        .single();
 
+    if (error) {
+        return { data: null, error: error.message, success: false };
+    }
+
+    // Simuler le retour RideRating
     return {
-        data: null,
-        error: 'Backend not connected',
-        success: false
+        data: {
+            ride_id: rideId,
+            rating,
+            comment
+        } as any,
+        error: null,
+        success: true
     };
 }
 
@@ -201,20 +279,20 @@ export function subscribeToRide(
     rideId: string,
     callback: (ride: Ride) => void
 ): () => void {
-    // TODO: Connect to Supabase Realtime
-    // const subscription = supabase
-    //     .channel(`ride:${rideId}`)
-    //     .on('postgres_changes', {
-    //         event: 'UPDATE',
-    //         schema: 'public',
-    //         table: 'rides',
-    //         filter: `id=eq.${rideId}`
-    //     }, (payload) => callback(payload.new as Ride))
-    //     .subscribe();
-    //
-    // return () => subscription.unsubscribe();
+    const channel = supabase
+        .channel(`ride:${rideId}`)
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'rides',
+            filter: `id=eq.${rideId}`
+        }, (payload) => {
+            console.log('Ride update:', payload);
+            callback(payload.new as Ride);
+        })
+        .subscribe();
 
-    console.warn('[rideService] subscribeToRide: Not connected to backend');
-
-    return () => { }; // Cleanup function
+    return () => {
+        supabase.removeChannel(channel);
+    };
 }

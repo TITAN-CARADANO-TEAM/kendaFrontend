@@ -352,6 +352,19 @@ export interface Database {
                     }
                 ];
             };
+            driver_documents: {
+                Row: DriverDocumentRow;
+                Insert: DriverDocumentInsert;
+                Update: DriverDocumentUpdate;
+                Relationships: [
+                    {
+                        foreignKeyName: 'driver_documents_driver_profile_id_fkey';
+                        columns: ['driver_profile_id'];
+                        referencedRelation: 'driver_profiles';
+                        referencedColumns: ['id'];
+                    }
+                ];
+            };
         };
         Views: {
             online_drivers: {

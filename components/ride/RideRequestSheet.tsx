@@ -8,12 +8,16 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
+import { type DriverLocation } from "@/types";
+
 interface RideRequestSheetProps {
     isOpen?: boolean;
     onClose?: () => void;
     destination?: [number, number] | null;
     distance?: number;
     onOrder?: () => void;
+    selectedDriver?: DriverLocation | null;
+    onDriverClear?: () => void;
 }
 
 export const RideRequestSheet = ({
@@ -21,7 +25,9 @@ export const RideRequestSheet = ({
     onClose,
     destination: externalDestination,
     distance: externalDistance = 0,
-    onOrder
+    onOrder,
+    selectedDriver,
+    onDriverClear
 }: RideRequestSheetProps) => {
     const t = useTranslations('Ride');
     const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
@@ -86,6 +92,30 @@ export const RideRequestSheet = ({
                 <h2 className="text-2xl font-heading font-bold text-white mb-6">
                     {t('orderRide')}
                 </h2>
+
+                {/* Selected Driver Banner */}
+                {selectedDriver && (
+                    <div className="mb-6 bg-yellow-500/10 border border-yellow-500/50 rounded-xl p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border border-yellow-500">
+                                {/* Ideally use Image component here or Avatar */}
+                                <span className="text-yellow-500 font-bold">{selectedDriver.driver_name?.[0]}</span>
+                            </div>
+                            <div>
+                                <p className="text-white font-bold text-sm">Demande directe à :</p>
+                                <p className="text-yellow-500 font-heading text-lg leading-none">{selectedDriver.driver_name}</p>
+                            </div>
+                        </div>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={onDriverClear}
+                            className="text-neutral-400 hover:text-white h-8 w-8 p-0"
+                        >
+                            <X className="w-5 h-5" />
+                        </Button>
+                    </div>
+                )}
 
                 {/* Inputs Section */}
                 <div className="space-y-4 mb-8">

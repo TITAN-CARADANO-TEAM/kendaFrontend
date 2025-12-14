@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTranslations } from "next-intl";
+import { createClient } from '@/lib/supabase/client';
 
 // Fix for default Leaflet markers in Next.js
 const iconUrl = "https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png";
@@ -55,15 +56,18 @@ const createDestinationIcon = () => {
 };
 
 // Custom Taxi Icon (White/Gray Car)
-// Custom Taxi Icon (White/Gray Car)
+// Custom Taxi Icon (Yellow Car on Black)
 const createTaxiIcon = () => {
     return L.divIcon({
         className: "custom-taxi-icon",
         html: `
-      <div class="flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-xl border-2 border-black">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="black" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>
+      <div class="relative flex items-center justify-center w-10 h-10 bg-black rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.5)] border-2 border-[#F0B90B] transform transition-all hover:scale-110">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F0B90B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/>
+          <circle cx="6.5" cy="16.5" r="2.5"/>
+          <circle cx="16.5" cy="16.5" r="2.5"/>
         </svg>
+        <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black"></div>
       </div>
     `,
         iconSize: [40, 40],
@@ -98,12 +102,80 @@ interface MapComponentProps {
     onDestinationChange?: (destination: [number, number] | null, distance: number) => void;
     /** Nearby drivers to display on map - provided by parent component */
     nearbyDrivers?: DriverLocation[];
+    onDriverSelect?: (driver: DriverLocation) => void;
 }
 
-const MapComponent = ({ onDestinationChange, nearbyDrivers = [] }: MapComponentProps) => {
+const MapComponent = ({ onDestinationChange, nearbyDrivers = [], onDriverSelect }: MapComponentProps) => {
     const t = useTranslations('Ride');
     const [position, setPosition] = useState<[number, number] | null>(null);
     const [destination, setDestination] = useState<[number, number] | null>(null);
+    const [drivers, setDrivers] = useState<DriverLocation[]>(nearbyDrivers);
+    const supabase = createClient();
+
+    // Sync props to state initially (only if drivers empty to avoid overwrite)
+    useEffect(() => {
+        if (nearbyDrivers.length > 0) {
+            setDrivers(nearbyDrivers);
+        }
+    }, [nearbyDrivers]);
+
+    // Realtime Driver Updates
+    useEffect(() => {
+        const channel = supabase
+            .channel('driver_updates')
+            .on('postgres_changes', {
+                event: '*', // Listen to INSERT, UPDATE, DELETE
+                schema: 'public',
+                table: 'driver_profiles'
+            }, (payload: any) => {
+                const newData = payload.new;
+                const oldData = payload.old;
+                const eventType = payload.eventType; // 'INSERT', 'UPDATE', 'DELETE'
+
+                setDrivers(currentDrivers => {
+                    // HANDLE DELETE or Offline
+                    if (eventType === 'DELETE' || (eventType === 'UPDATE' && newData.is_online === false)) {
+                        const targetId = oldData.id || newData.id;
+                        return currentDrivers.filter(d => d.driver_id !== targetId);
+                    }
+
+                    // HANDLE UPDATE or INSERT
+                    if (newData && newData.is_online === true && newData.current_lat && newData.current_lng) {
+                        const exists = currentDrivers.find(d => d.driver_id === newData.id);
+                        if (exists) {
+                            // Update existing
+                            return currentDrivers.map(d =>
+                                d.driver_id === newData.id
+                                    ? {
+                                        ...d,
+                                        latitude: newData.current_lat,
+                                        longitude: newData.current_lng,
+                                        heading: newData.heading // if available
+                                    }
+                                    : d
+                            );
+                        } else {
+                            // Add new
+                            return [...currentDrivers, {
+                                driver_id: newData.id,
+                                latitude: newData.current_lat,
+                                longitude: newData.current_lng,
+                                driver_name: newData.full_name || 'Chauffeur',
+                                rating: newData.rating || 5.0,
+                                vehicle_type: newData.vehicle_type
+                            } as DriverLocation];
+                        }
+                    }
+
+                    return currentDrivers;
+                });
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
 
     useEffect(() => {
         // Get User Location
@@ -233,13 +305,15 @@ const MapComponent = ({ onDestinationChange, nearbyDrivers = [] }: MapComponentP
                 </Marker>
             )}
 
-            {/* Driver Markers */}
-            {/* TODO: Connect to Supabase - drivers will come from real-time subscription */}
-            {nearbyDrivers.map((driver) => (
+            {/* Drivers Markers (Realtime) */}
+            {drivers.map((driver) => (
                 <Marker
                     key={driver.driver_id}
                     position={[driver.latitude, driver.longitude]}
                     icon={createTaxiIcon()}
+                    eventHandlers={{
+                        click: () => onDriverSelect?.(driver)
+                    }}
                 >
                     <Popup>
                         {driver.driver_name || t('taxiAvailable', { id: driver.driver_id.slice(0, 4) })}

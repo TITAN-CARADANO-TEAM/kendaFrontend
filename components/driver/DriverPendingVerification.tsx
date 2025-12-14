@@ -34,7 +34,7 @@ export function DriverPendingVerification({
     const t = useTranslations('Driver');
     const { user } = useAuth();
     const router = useRouter();
-    const supabase = createClient();
+    const supabase: any = createClient();
     const [isValidating, setIsValidating] = useState(false);
 
     // Auto-validate simulation (for demo purposes)

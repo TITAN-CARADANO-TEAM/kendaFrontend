@@ -12,6 +12,9 @@ import { SafetyToolkit } from "@/components/ride/SafetyToolkit";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/lib/navigation";
 import { useTranslations } from "next-intl";
+import { useAuth } from "@/hooks/useAuth";
+import * as rideService from "@/services/rideService";
+import type { DriverLocation, Ride } from "@/types";
 
 // Dynamic import with SSR disabled to avoid "window is not defined" error from Leaflet
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
@@ -31,6 +34,38 @@ export default function MapPage() {
     const [step, setStep] = useState<Step>('IDLE');
     const [destination, setDestination] = useState<[number, number] | null>(null);
     const [distance, setDistance] = useState<number>(0);
+    const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+    const [nearbyDrivers, setNearbyDrivers] = useState<DriverLocation[]>([]);
+    const [selectedDriver, setSelectedDriver] = useState<DriverLocation | null>(null);
+    const [currentRide, setCurrentRide] = useState<Ride | null>(null);
+    const { user } = useAuth();
+
+    const handleDriverSelect = (driver: DriverLocation) => {
+        setSelectedDriver(driver);
+        // Automatically open the sheet to confirm logic
+        if (step === 'IDLE' || step === 'SELECTING') {
+            setStep('SELECTING');
+        }
+    };
+
+    const handleClearDriver = () => {
+        setSelectedDriver(null);
+    };
+
+    // Get User Position & Drivers
+    useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    setUserLocation([latitude, longitude]);
+                    const drivers = await rideService.fetchNearbyDrivers(latitude, longitude);
+                    setNearbyDrivers(drivers);
+                },
+                (err) => console.error("Loc error:", err)
+            );
+        }
+    }, []);
 
     // Mock Ride Data (calculated based on distance for realism)
     const rideTime = Math.ceil(distance * 2) + " min";
@@ -48,15 +83,68 @@ export default function MapPage() {
         }
     };
 
-    const handleOrder = () => {
+    const handleOrder = async () => {
+        if (!user || !userLocation || !destination) {
+            alert(t('loginRequired') || "Veuillez vous connecter et activer la localisation");
+            return;
+        }
+
         setStep('SEARCHING');
-        // Simulate finding a driver
-        setTimeout(() => {
-            setStep('RIDE_ACTIVE');
-        }, 2500);
+
+        // Clean price string "2,500 FC" -> 2500
+        const priceValue = parseInt(estimatedPrice.replace(/\D/g, '')) || 2000;
+
+        const result = await rideService.createRide({
+            passenger_id: user.id,
+            pickup_latitude: userLocation[0],
+            pickup_longitude: userLocation[1],
+            pickup_address: "Ma position", // TODO: Reverse geocoding
+            destination_latitude: destination[0],
+            destination_longitude: destination[1],
+            destination_address: "Destination", // TODO: Reverse geocoding
+            distance: distance,
+            duration: Math.ceil(distance * 3),
+            price: priceValue,
+            vehicle_type: 'TAXI',
+            specificDriverId: selectedDriver?.driver_id
+        } as any);
+
+        if (result.success && result.data) {
+            setCurrentRide(result.data);
+
+            // Subscribe to Ride Updates
+            const unsubscribe = rideService.subscribeToRide(result.data.id, async (updatedRide) => {
+                console.log("Ride update received:", updatedRide.status);
+
+                if (updatedRide.status === 'DRIVER_ASSIGNED' || updatedRide.status === 'DRIVER_ARRIVED') {
+                    // Fetch full details (driver info)
+                    const fullRide = await rideService.getRideStatus(updatedRide.id);
+                    if (fullRide.success && fullRide.data) {
+                        setCurrentRide(fullRide.data);
+                        setStep('RIDE_ACTIVE');
+                    }
+                } else if (updatedRide.status === 'COMPLETED') {
+                    setStep('RIDE_COMPLETED');
+                    // unsubscribe handled by cleanup or manually if needed, but here we just switch view
+                }
+            });
+
+            // Cleanup subscription on unmount or step change? 
+            // Better to keep it until flow ends.
+        } else {
+            alert("Erreur: " + (result.error || "Impossible de commander"));
+            setStep('IDLE');
+        }
     };
 
-    // Simulate ride completion for demo purposes
+    // Remove simulated ride completion
+    /* 
+    useEffect(() => { ... } 
+    */
+
+
+    // Clean up simulation effect
+    /*
     useEffect(() => {
         if (step === 'RIDE_ACTIVE') {
             const timer = setTimeout(() => {
@@ -65,6 +153,7 @@ export default function MapPage() {
             return () => clearTimeout(timer);
         }
     }, [step]);
+    */
 
     const handleRatingComplete = () => {
         setStep('IDLE');
@@ -76,7 +165,11 @@ export default function MapPage() {
         <main className="relative w-full h-full overflow-hidden bg-black">
             {/* Map Background (z-0) - Covers EVERYTHING */}
             <div className="absolute inset-0 z-0">
-                <MapComponent onDestinationChange={handleDestinationChange} />
+                <MapComponent
+                    onDestinationChange={handleDestinationChange}
+                    nearbyDrivers={nearbyDrivers}
+                    onDriverSelect={handleDriverSelect}
+                />
             </div>
 
             {/* Floating Header (App Shell) */}
@@ -156,6 +249,8 @@ export default function MapPage() {
                         destination={destination}
                         distance={distance}
                         onOrder={handleOrder}
+                        selectedDriver={selectedDriver}
+                        onDriverClear={handleClearDriver}
                     />
                 </div>
 
@@ -186,12 +281,12 @@ export default function MapPage() {
                                 animate={{ opacity: 1, y: 0 }}
                             >
                                 <DriverTrustCard
-                                    driverName="Jean-Pierre M."
-                                    driverImage="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&auto=format&fit=crop&q=60"
-                                    vehicleModel="Toyota Corolla"
-                                    plateNumber="KV 1234 BB"
+                                    driverName={currentRide?.driver?.full_name || "Chauffeur"}
+                                    driverImage={currentRide?.driver?.avatar_url || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&auto=format&fit=crop&q=60"}
+                                    vehicleModel={(currentRide as any)?.driver_profile?.vehicle_model || "Véhicule"}
+                                    plateNumber={(currentRide as any)?.driver_profile?.license_plate || "PLAQU"}
                                     isVerified={true}
-                                    rating={4.9}
+                                    rating={(currentRide as any)?.driver_profile?.rating || 5.0}
                                 />
                             </motion.div>
 
@@ -200,8 +295,8 @@ export default function MapPage() {
                                 animate={{ opacity: 1, y: 0 }}
                             >
                                 <ActiveRideOverlay
-                                    remainingTime={rideTime}
-                                    remainingDistance={rideDistance}
+                                    remainingTime={rideTime} // Could be real-time
+                                    remainingDistance={rideDistance} // Could be real-time
                                     arrivalTime={arrivalTime}
                                     className="static"
                                 />
