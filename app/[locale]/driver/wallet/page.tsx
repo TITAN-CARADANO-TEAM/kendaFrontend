@@ -66,6 +66,7 @@ export default function DriverWalletPage() {
             setIsLoading(false);
         };
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     return (

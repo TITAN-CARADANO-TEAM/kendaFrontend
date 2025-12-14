@@ -92,30 +92,32 @@ export default function DriverProfilePage() {
                 .single();
 
             if (data) {
+                const d = data as any;
                 setDriverInfo({
                     name: user.user_metadata?.full_name || "Chauffeur",
                     phone: user.phone || "Non renseigné",
                     email: user.email,
                     city: "Goma, Nord-Kivu", // Defaut
-                    rating: data.rating || 5.0,
+                    rating: d.rating || 5.0,
                     totalRides: rideCount || 0,
                     totalKm: 0, // Placeholder
                     memberSince: new Date(user.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
                     walletAddress: "addr1...", // Placeholder
-                    isVerifiedOnChain: data.status === 'VERIFIED',
+                    isVerifiedOnChain: d.status === 'VERIFIED',
                     vehicle: {
-                        type: data.vehicle_type || "Taxi",
-                        brand: data.vehicle_brand || "-",
-                        model: data.vehicle_model || "-",
-                        year: data.vehicle_year?.toString() || "-",
-                        plate: data.license_plate || "-",
-                        color: data.vehicle_color || "-",
-                        isValidated: data.status === 'VERIFIED'
+                        type: d.vehicle_type || "Taxi",
+                        brand: d.vehicle_brand || "-",
+                        model: d.vehicle_model || "-",
+                        year: d.vehicle_year?.toString() || "-",
+                        plate: d.license_plate || "-",
+                        color: d.vehicle_color || "-",
+                        isValidated: d.status === 'VERIFIED'
                     }
                 });
             }
         };
         fetchProfile();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const documents: Document[] = [

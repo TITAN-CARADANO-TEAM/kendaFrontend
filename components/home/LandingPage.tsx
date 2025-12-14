@@ -159,7 +159,7 @@ export function LandingPage() {
                                     <span className="text-xs font-bold uppercase tracking-wider">Assistant Kenda</span>
                                 </div>
                                 <h2 className="text-3xl md:text-4xl font-heading font-bold text-white mb-6">
-                                    Besoin d'aide sur l'application ?
+                                    Besoin d&apos; aide sur l&apos;application ?
                                 </h2>
                                 <p className="text-[#9A9A9A] text-lg mb-8 leading-relaxed">
                                     Notre assistant IA intelligent est là pour vous guider dans les moindres détails. Que vous souhaitiez savoir comment commander, devenir chauffeur, ou comprendre le fonctionnement sécurisé de notre plateforme, posez vos questions en toute simplicité.
@@ -170,7 +170,7 @@ export function LandingPage() {
                                         className="h-12 px-8 bg-white text-black hover:bg-white/90 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
                                     >
                                         <MessageSquare className="w-4 h-4 mr-2" />
-                                        Discuter avec l'IA
+                                        Discuter avec l&apos;IA
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -178,7 +178,7 @@ export function LandingPage() {
                                         className="h-12 px-8 border-[#333] text-white hover:bg-[#222] hover:text-white hover:border-white/20 rounded-full"
                                     >
                                         <LifeBuoy className="w-4 h-4 mr-2" />
-                                        Centre d'aide
+                                        Centre d&apos;aide
                                     </Button>
                                 </div>
                             </div>

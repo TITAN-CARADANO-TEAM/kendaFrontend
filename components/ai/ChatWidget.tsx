@@ -189,12 +189,12 @@ export function ChatWidget({ isOpen: externalIsOpen, onToggle }: { isOpen?: bool
                                             <div className="prose prose-invert prose-sm max-w-none break-words">
                                                 <ReactMarkdown
                                                     components={{
-                                                        p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                                                        ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
-                                                        ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2 space-y-1" {...props} />,
-                                                        li: ({ node, ...props }) => <li className="mb-0.5" {...props} />,
-                                                        strong: ({ node, ...props }) => <strong className="font-bold text-[#F0B90B]" {...props} />,
-                                                        a: ({ node, ...props }) => <a className="text-[#F0B90B] underline hover:no-underline" {...props} />
+                                                        p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
+                                                        ul: ({ node, ...props }: any) => <ul className="list-disc pl-4 mb-2 space-y-1" {...props} />,
+                                                        ol: ({ node, ...props }: any) => <ol className="list-decimal pl-4 mb-2 space-y-1" {...props} />,
+                                                        li: ({ node, ...props }: any) => <li className="mb-0.5" {...props} />,
+                                                        strong: ({ node, ...props }: any) => <strong className="font-bold text-[#F0B90B]" {...props} />,
+                                                        a: ({ node, ...props }: any) => <a className="text-[#F0B90B] underline hover:no-underline" {...props} />
                                                     }}
                                                 >
                                                     {msg.content}
@@ -258,7 +258,7 @@ export function ChatWidget({ isOpen: externalIsOpen, onToggle }: { isOpen?: bool
                                 </Button>
                             </div>
                             <div className="text-[10px] text-center text-[#444] mt-2">
-                                L'IA peut faire des erreurs. Vérifiez les informations importantes.
+                                L&apos;IA peut faire des erreurs. Vérifiez les informations importantes.
                             </div>
                         </div>
                     </motion.div>

@@ -53,8 +53,12 @@ export default function DriverHistoryPage() {
                     setStats({
                         total_rides: total,
                         completion_rate: completionRate,
-                        average_rating: profile?.rating || 5.0,
-                        earnings: 0 // Not used in summary directly in this view
+                        average_rating: (profile as any)?.rating || 5.0,
+                        today_earnings: 0,
+                        week_earnings: 0,
+                        month_earnings: 0,
+                        total_earnings: 0,
+                        today_rides: 0
                     });
                 }
             } catch (error) {
@@ -65,22 +69,24 @@ export default function DriverHistoryPage() {
         };
 
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     // Format ride for display
     const formatRide = (ride: Ride) => {
-        const rideDate = ride.completed_at ? new Date(ride.completed_at) : new Date(ride.created_at);
+        const r = ride as any;
+        const rideDate = r.completed_at ? new Date(r.completed_at) : new Date(r.created_at);
         return {
-            id: ride.id,
+            id: r.id,
             date: rideDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
             time: rideDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            from: ride.pickup_address || t('startPoint') || 'Point de départ',
-            to: ride.dest_address || ride.destination_address || t('destination') || 'Destination', // Handle varying field names
-            distance: ride.distance_km ? `${ride.distance_km} km` : '--',
-            duration: ride.duration_minutes ? `${ride.duration_minutes} min` : '--',
-            amount: `${(ride.final_price || ride.price || ride.estimated_price || 0).toLocaleString()} FC`,
+            from: r.pickup_address || t('startPoint') || 'Point de départ',
+            to: r.dest_address || r.destination_address || t('destination') || 'Destination', // Handle varying field names
+            distance: r.distance_km ? `${r.distance_km} km` : '--',
+            duration: r.duration_minutes ? `${r.duration_minutes} min` : '--',
+            amount: `${(r.final_price || r.price || r.estimated_price || 0).toLocaleString()} FC`,
             rating: 5, // Default as individual ride ratings not fully linked yet
-            status: ride.status
+            status: r.status
         };
     };
 
