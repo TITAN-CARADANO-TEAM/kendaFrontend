@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import type { DriverLocation } from '@/types';
+import type { DriverLocation, Ride } from '@/types';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -75,6 +75,36 @@ const createTaxiIcon = () => {
     });
 };
 
+// Custom Highlight Icon (Blinking for new requests)
+const createHighlightIcon = () => {
+    return L.divIcon({
+        className: "custom-highlight-icon",
+        html: `
+      <div class="relative flex items-center justify-center w-12 h-12">
+        <div class="absolute w-full h-full bg-[#F0B90B] rounded-full opacity-75 animate-ping"></div>
+        <div class="absolute w-1/2 h-1/2 bg-[#F0B90B] rounded-full opacity-50 animate-pulse"></div>
+        <div class="relative w-4 h-4 bg-white border-4 border-[#F0B90B] rounded-full shadow-xl"></div>
+      </div>
+    `,
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
+    });
+};
+
+const createClientMarkerIcon = () => {
+    return L.divIcon({
+        className: "custom-client-marker",
+        html: `
+            <div class="relative w-8 h-8 flex items-center justify-center">
+                <div class="absolute w-full h-full bg-[#F0B90B] rounded-full opacity-40 animate-ping"></div>
+                <div class="w-4 h-4 bg-[#F0B90B] rounded-full border-2 border-white shadow-lg"></div>
+            </div>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+    });
+};
+
 // Component to recenter map when position changes
 const RecenterMap = ({ position }: { position: [number, number] }) => {
     const map = useMap();
@@ -107,10 +137,22 @@ interface MapComponentProps {
     routeStart?: [number, number] | null;
     routeEnd?: [number, number] | null;
     trackedDriverId?: string | null;
+    highlightLocation?: [number, number] | null;
+    availableRides?: Ride[];
+    onRideSelect?: (ride: Ride) => void;
 }
 
 const MapComponent = (props: MapComponentProps) => {
-    const { onDestinationChange, nearbyDrivers = [], onDriverSelect, userLocation, trackedDriverId } = props;
+    const {
+        onDestinationChange,
+        nearbyDrivers = [],
+        onDriverSelect,
+        userLocation,
+        trackedDriverId,
+        highlightLocation,
+        availableRides = [],
+        onRideSelect
+    } = props;
     const t = useTranslations('Ride');
     const [internalPosition, setInternalPosition] = useState<[number, number] | null>(null);
 
@@ -152,9 +194,9 @@ const MapComponent = (props: MapComponentProps) => {
 
                     // HANDLE UPDATE or INSERT
                     if (newData && newData.is_online === true && newData.current_lat && newData.current_lng) {
-                         const targetUserId = newData.user_id;
+                        const targetUserId = newData.user_id;
                         const exists = currentDrivers.find(d => d.driver_id === targetUserId);
-                        
+
                         if (exists) {
                             // Update existing
                             return currentDrivers.map(d =>
@@ -340,8 +382,41 @@ const MapComponent = (props: MapComponentProps) => {
                 </Marker>
             )}
 
+            {/* Highlighted Location (e.g. for new ride offers) */}
+            {highlightLocation && highlightLocation[0] !== undefined && highlightLocation[1] !== undefined && (
+                <>
+                    <RecenterMap position={highlightLocation} />
+                    <Marker position={highlightLocation} icon={createHighlightIcon()} />
+                </>
+            )}
+
+            {/* Available Rides (Radar Mode) */}
+            {availableRides.filter(r => r.pickup_lat !== undefined && r.pickup_lng !== undefined).map((ride) => (
+                <Marker
+                    key={ride.id}
+                    position={[ride.pickup_lat, ride.pickup_lng]}
+                    icon={createClientMarkerIcon()}
+                    eventHandlers={{
+                        click: () => onRideSelect?.(ride)
+                    }}
+                >
+                    <Popup className="custom-popup">
+                        <div className="p-2">
+                            <p className="font-bold text-sm mb-1">Passager en attente</p>
+                            <p className="text-xs text-[#9A9A9A] mb-2">{ride.distance_km} km • {ride.price} FC</p>
+                            <button
+                                onClick={() => onRideSelect?.(ride)}
+                                className="w-full bg-[#F0B90B] text-black text-[10px] py-1 rounded font-bold"
+                            >
+                                VOIR L'OFFRE
+                            </button>
+                        </div>
+                    </Popup>
+                </Marker>
+            ))}
+
             {/* Drivers Markers (Realtime) */}
-            {drivers.map((driver) => (
+            {drivers.filter(d => d.latitude !== undefined && d.longitude !== undefined).map((driver) => (
                 <Marker
                     key={driver.driver_id}
                     position={[driver.latitude, driver.longitude]}

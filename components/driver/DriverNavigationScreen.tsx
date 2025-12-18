@@ -13,7 +13,7 @@ export default function DriverNavigationScreen({ ride, onStatusUpdate }: DriverN
     const getInstruction = () => {
         switch (ride.status) {
             case 'ACCEPTED': return "Rendez-vous au point de départ";
-            case 'ARRIVED': return "Attendez le client au point de prise en charge";
+            case 'DRIVER_ARRIVED': return "Attendez le client au point de prise en charge";
             case 'IN_PROGRESS': return "En route vers la destination";
             default: return "Course en cours";
         }
@@ -22,14 +22,13 @@ export default function DriverNavigationScreen({ ride, onStatusUpdate }: DriverN
     const getPrimaryAction = () => {
         switch (ride.status) {
             case 'ACCEPTED':
-            case 'DRIVER_ASSIGNED': // Legacy fallback
+            case 'DRIVER_ASSIGNED':
                 return {
                     label: "JE SUIS ARRIVÉ",
-                    action: () => onStatusUpdate('ARRIVED'),
+                    action: () => onStatusUpdate('DRIVER_ARRIVED'),
                     color: "bg-[#F0B90B] text-black hover:bg-[#D4A50A]"
                 };
-            case 'ARRIVED':
-            case 'DRIVER_ARRIVED': // Legacy fallback
+            case 'DRIVER_ARRIVED':
                 return {
                     label: "DÉMARRER LA COURSE",
                     action: () => onStatusUpdate('IN_PROGRESS'),

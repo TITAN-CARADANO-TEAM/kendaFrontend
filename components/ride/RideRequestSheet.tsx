@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion, PanInfo } from "framer-motion";
-import { MapPin, Navigation, Clock, X, CalendarClock } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { MapPin, Navigation, Clock, X, CalendarClock, Car, Bike, Sparkles, ChevronRight, CreditCard, DollarSign, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -10,12 +10,23 @@ import { useTranslations } from "next-intl";
 
 import { type DriverLocation } from "@/types";
 
+interface RideType {
+    id: 'kenda_go' | 'kenda_comfort' | 'kenda_moto';
+    name: string;
+    description: string;
+    icon: React.ElementType;
+    basePrice: number;
+    pricePerKm: number;
+    multiplier: number;
+    capacity: number;
+}
+
 interface RideRequestSheetProps {
     isOpen?: boolean;
     onClose?: () => void;
     destination?: [number, number] | null;
     distance?: number;
-    onOrder?: () => void;
+    onOrder?: (rideTypeId: string, price: number) => void;
     selectedDriver?: DriverLocation | null;
     onDriverClear?: () => void;
 }
@@ -30,28 +41,53 @@ export const RideRequestSheet = ({
     onDriverClear
 }: RideRequestSheetProps) => {
     const t = useTranslations('Ride');
-    const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
-    const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
+    const [selectedRideType, setSelectedRideType] = useState<RideType['id']>('kenda_go');
+    const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'WALLET'>('CASH');
 
-    // Calculate price based on distance from map
-    useEffect(() => {
-        if (externalDestination && externalDistance > 0) {
-            const basePrice = 2000;
-            const pricePerKm = 500;
-            const calculatedPrice = basePrice + (pricePerKm * externalDistance);
-            const calculatedTime = Math.ceil(externalDistance * 2); // ~2 min per km
-
-            setEstimatedPrice(Math.round(calculatedPrice));
-            setEstimatedTime(calculatedTime);
-        } else {
-            setEstimatedPrice(null);
-            setEstimatedTime(null);
+    const rideTypes = useMemo<RideType[]>(() => [
+        {
+            id: 'kenda_go',
+            name: "Kenda Go",
+            description: "Trajets quotidiens abordables",
+            icon: Car,
+            basePrice: 2000,
+            pricePerKm: 500,
+            multiplier: 1,
+            capacity: 4
+        },
+        {
+            id: 'kenda_comfort',
+            name: "Kenda Comfort",
+            description: "Voitures récentes et spacieuses",
+            icon: Sparkles,
+            basePrice: 3500,
+            pricePerKm: 800,
+            multiplier: 1.4,
+            capacity: 4
+        },
+        {
+            id: 'kenda_moto',
+            name: "Kenda Moto",
+            description: "Rapide, évite les bouchons",
+            icon: Bike,
+            basePrice: 1000,
+            pricePerKm: 300,
+            multiplier: 0.6,
+            capacity: 1
         }
-    }, [externalDestination, externalDistance]);
+    ], []);
+
+    const calculatePrice = (type: RideType) => {
+        if (!externalDistance) return 0;
+        const total = type.basePrice + (type.pricePerKm * externalDistance);
+        return Math.round(total / 100) * 100; // Round to nearest 100
+    };
+
+    const estimatedTime = externalDistance ? Math.ceil(externalDistance * 2) : 0;
 
     // Handle drag to close
     const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-        const threshold = 150; // Minimum drag distance to close
+        const threshold = 100;
         if (info.offset.y > threshold) {
             onClose?.();
         }
@@ -59,149 +95,168 @@ export const RideRequestSheet = ({
 
     if (!isOpen) return null;
 
+    const currentRideType = rideTypes.find(r => r.id === selectedRideType)!;
+    const currentPrice = calculatePrice(currentRideType);
+
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none">
             <motion.div
                 drag="y"
                 dragConstraints={{ top: 0, bottom: 0 }}
-                dragElastic={0.2}
+                dragElastic={0.1}
                 onDragEnd={handleDragEnd}
                 initial={{ y: "100%" }}
                 animate={{ y: isOpen ? 0 : "100%" }}
                 exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
                 className={cn(
-                    "w-full max-w-md pointer-events-auto",
-                    "bg-[#0C0C0C] border-t border-[#1A1A1A]",
-                    "rounded-t-[24px] p-6 pb-[calc(6rem+env(safe-area-inset-bottom))]",
-                    "shadow-2xl relative"
+                    "w-full max-w-lg pointer-events-auto",
+                    "bg-[#0F0F0F] border-t border-[#1F1F1F]",
+                    "rounded-t-[32px] overflow-hidden",
+                    "shadow-[0_-8px_30px_rgb(0,0,0,0.5)] relative"
                 )}
             >
-                {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-[#9A9A9A] hover:text-white transition-colors z-20"
-                >
-                    <X className="w-6 h-6" />
-                </button>
+                {/* Header Section */}
+                <div className="px-6 pt-3 pb-4">
+                    {/* Drag Handle */}
+                    <div className="w-10 h-1 bg-[#2F2F2F] rounded-full mx-auto mb-4" />
 
-                {/* Drag Handle */}
-                <div className="w-12 h-1.5 bg-[#2A2A2A] rounded-full mx-auto mb-8 cursor-grab active:cursor-grabbing" />
-
-                {/* Title */}
-                <h2 className="text-2xl font-heading font-bold text-white mb-6">
-                    {t('orderRide')}
-                </h2>
-
-                {/* Selected Driver Banner */}
-                {selectedDriver && (
-                    <div className="mb-6 bg-yellow-500/10 border border-yellow-500/50 rounded-xl p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center overflow-hidden border border-yellow-500">
-                                {/* Ideally use Image component here or Avatar */}
-                                <span className="text-yellow-500 font-bold">{selectedDriver.driver_name?.[0]}</span>
-                            </div>
-                            <div>
-                                <p className="text-white font-bold text-sm">Demande directe à :</p>
-                                <p className="text-yellow-500 font-heading text-lg leading-none">{selectedDriver.driver_name}</p>
-                            </div>
+                    {/* Routing Info (Minimized) */}
+                    <div className="flex items-center gap-3 bg-[#1A1A1A] p-3 rounded-2xl border border-[#2A2A2A] mb-4">
+                        <div className="flex flex-col items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-[#F0B90B]" />
+                            <div className="w-0.5 h-4 bg-[#2A2A2A]" />
+                            <div className="w-2 h-2 rounded-full bg-white" />
                         </div>
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={onDriverClear}
-                            className="text-neutral-400 hover:text-white h-8 w-8 p-0"
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[#9A9A9A] text-xs font-medium truncate">{t('currentPosition')}</p>
+                            <p className="text-white text-sm font-semibold truncate">
+                                {externalDestination ? t('destinationSelected', { distance: externalDistance.toFixed(1) }) : t('selectDestination')}
+                            </p>
+                        </div>
+                        {onClose && (
+                            <button onClick={onClose} className="p-2 hover:bg-[#2A2A2A] rounded-full transition-colors">
+                                <X className="w-5 h-5 text-[#9A9A9A]" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Selected Driver Banner */}
+                    {selectedDriver && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            className="mb-4 bg-[#F0B90B]/10 border border-[#F0B90B]/30 rounded-2xl p-3 flex items-center justify-between"
                         >
-                            <X className="w-5 h-5" />
-                        </Button>
-                    </div>
-                )}
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-[#F0B90B] flex items-center justify-center text-black font-bold border-2 border-[#0F0F0F]">
+                                    {selectedDriver.driver_name?.[0]}
+                                </div>
+                                <div>
+                                    <p className="text-[#F0B90B] text-[10px] font-bold uppercase tracking-wider">Demande directe</p>
+                                    <p className="text-white font-bold">{selectedDriver.driver_name}</p>
+                                </div>
+                            </div>
+                            <button onClick={onDriverClear} className="p-1.5 hover:bg-white/10 rounded-full">
+                                <X className="w-4 h-4 text-[#F0B90B]" />
+                            </button>
+                        </motion.div>
+                    )}
+                </div>
 
-                {/* Inputs Section */}
-                <div className="space-y-4 mb-8">
-                    {/* Departure Input */}
-                    <div className="relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#F0B90B] z-10">
-                            <Navigation className="w-5 h-5 fill-current" />
-                        </div>
-                        <Input
-                            defaultValue={t('currentPosition')}
-                            className="pl-12 bg-[#151515] border-[#1A1A1A] text-white placeholder:text-[#9A9A9A] focus-visible:ring-[#F0B90B]/50"
-                            readOnly
-                        />
-                    </div>
+                {/* Ride Types List */}
+                <div className="px-3 max-h-[40vh] overflow-y-auto no-scrollbar">
+                    <div className="space-y-2">
+                        {rideTypes.map((type) => {
+                            const isSelected = selectedRideType === type.id;
+                            const price = calculatePrice(type);
 
-                    {/* Destination Display */}
-                    <div className="relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9A9A] z-10">
-                            <MapPin className="w-5 h-5" />
-                        </div>
-                        <div className="pl-12 pr-4 h-11 bg-[#151515] border border-[#1A1A1A] text-white rounded-button flex items-center">
-                            {externalDestination ? (
-                                <span className="text-sm">
-                                    {t('destinationSelected', { distance: externalDistance.toFixed(2) })}
-                                </span>
-                            ) : (
-                                <span className="text-[#9A9A9A] text-sm">
-                                    {t('selectDestination')}
-                                </span>
-                            )}
-                        </div>
+                            return (
+                                <motion.button
+                                    key={type.id}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setSelectedRideType(type.id)}
+                                    className={cn(
+                                        "w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-200",
+                                        isSelected
+                                            ? "bg-[#1A1A1A] border-2 border-[#F0B90B]"
+                                            : "bg-transparent border-2 border-transparent hover:bg-[#151515]"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "w-14 h-14 rounded-xl flex items-center justify-center transition-colors",
+                                        isSelected ? "bg-[#F0B90B] text-black" : "bg-[#1A1A1A] text-[#9A9A9A]"
+                                    )}>
+                                        <type.icon className="w-8 h-8" />
+                                    </div>
+
+                                    <div className="flex-1 text-left">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-white font-bold text-lg">{type.name}</span>
+                                            <span className="flex items-center gap-1 text-[#9A9A9A] text-xs">
+                                                <Clock className="w-3 h-3" />
+                                                {estimatedTime + (type.id === 'kenda_moto' ? -1 : 2)} min
+                                            </span>
+                                        </div>
+                                        <p className="text-[#9A9A9A] text-xs">{type.description}</p>
+                                    </div>
+
+                                    <div className="text-right">
+                                        <p className="text-white font-bold text-lg">
+                                            {externalDestination ? `${price.toLocaleString()} FC` : '--'}
+                                        </p>
+                                        <p className="text-[#9A9A9A] text-[10px] line-through">
+                                            {externalDestination ? `${Math.round(price * 1.2).toLocaleString()} FC` : ''}
+                                        </p>
+                                    </div>
+                                </motion.button>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* Estimation Section */}
-                {estimatedPrice && estimatedTime ? (
-                    <div className="flex items-center justify-between mb-8 px-1">
-                        <div className="flex flex-col">
-                            <span className="text-[#9A9A9A] text-sm font-medium mb-1">{t('estimatedPrice')}</span>
-                            <span className="text-3xl font-bold text-white font-heading">
-                                {estimatedPrice.toLocaleString()} FC
+                {/* Footer Section */}
+                <div className="p-6 bg-[#121212] border-t border-[#1F1F1F] mt-2">
+                    {/* Payment Method Selector */}
+                    <div className="flex items-center justify-between mb-6">
+                        <button
+                            onClick={() => setPaymentMethod(prev => prev === 'CASH' ? 'WALLET' : 'CASH')}
+                            className="flex items-center gap-2 px-4 py-2 bg-[#1A1A1A] rounded-full border border-[#2A2A2A] hover:bg-[#252525] transition-colors"
+                        >
+                            {paymentMethod === 'CASH' ? (
+                                <DollarSign className="w-4 h-4 text-green-500" />
+                            ) : (
+                                <Wallet className="w-4 h-4 text-[#F0B90B]" />
+                            )}
+                            <span className="text-white text-sm font-medium">
+                                {paymentMethod === 'CASH' ? 'Espèces' : 'Portefeuille'}
                             </span>
-                        </div>
+                            <ChevronRight className="w-4 h-4 text-[#9A9A9A]" />
+                        </button>
 
-                        <div className="flex items-center gap-3 bg-[#1A1A1A] px-4 py-2 rounded-lg border border-[#2A2A2A]">
-                            <Clock className="w-4 h-4 text-[#F0B90B]" />
-                            <span className="text-[#9A9A9A] text-sm font-medium">~{estimatedTime} min</span>
-                        </div>
+                        <button className="flex items-center gap-2 text-[#9A9A9A] hover:text-white transition-colors">
+                            <CalendarClock className="w-4 h-4" />
+                            <span className="text-xs font-medium">Planifier</span>
+                        </button>
                     </div>
-                ) : (
-                    <div className="mb-8 px-1 py-4 text-center">
-                        <span className="text-[#9A9A9A] text-sm">
-                            {t('enterDestination')}
-                        </span>
-                    </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex items-center gap-3">
-                    {/* Schedule Button */}
-                    <button
-                        disabled={!externalDestination || !estimatedPrice}
-                        onClick={() => {
-                            // TODO: Open DatePicker modal
-                            alert(t('scheduleRide'));
-                        }}
-                        className={cn(
-                            "flex items-center justify-center h-14 w-14 rounded-xl border transition-all",
-                            "bg-[#1A1A1A] border-[#333333] text-white hover:bg-[#252525]",
-                            "disabled:opacity-50 disabled:cursor-not-allowed"
-                        )}
-                        title={t('scheduleRide')}
-                    >
-                        <CalendarClock className="w-6 h-6" />
-                    </button>
 
                     {/* Order Button */}
                     <Button
-                        disabled={!externalDestination || !estimatedPrice}
-                        onClick={onOrder}
-                        className="flex-1 h-14 text-lg font-bold bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!externalDestination}
+                        onClick={() => onOrder?.(selectedRideType, currentPrice)}
+                        className={cn(
+                            "w-full h-16 rounded-2xl text-xl font-bold transition-all active:scale-95",
+                            "bg-[#F0B90B] text-black hover:bg-[#F0B90B]/90 shadow-[0_4px_20px_rgba(240,185,11,0.3)]",
+                            "disabled:opacity-50 disabled:grayscale"
+                        )}
                     >
-                        {t('orderTaxi')}
+                        {externalDestination ? `${t('orderBtn')} ${currentRideType.name}` : t('selectDestination')}
                     </Button>
+
+                    <div className="h-[env(safe-area-inset-bottom)]" />
                 </div>
             </motion.div>
         </div>
     );
 };
+

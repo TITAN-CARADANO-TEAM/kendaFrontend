@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
 
-const MapWrapper = () => {
+const MapWrapper = (props: any) => {
     const Map = useMemo(
         () =>
             dynamic(() => import("./MapComponent"), {
@@ -17,7 +17,7 @@ const MapWrapper = () => {
         []
     );
 
-    return <Map />;
+    return <Map {...props} />;
 };
 
 export default MapWrapper;

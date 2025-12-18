@@ -124,28 +124,58 @@ export async function updateLocation(
 }
 
 /**
- * Obtient les statistiques du chauffeur
+ * Obtient les statistiques réelles du chauffeur depuis Supabase
  */
-export async function getDriverStats(driverId: string): Promise<ApiResponse<DriverStats>> {
-    // TODO: Connect to Supabase
-    // const today = new Date().toISOString().split('T')[0];
-    // const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    //
-    // const { data: rides, error } = await supabase
-    //     .from('rides')
-    //     .select('final_price, completed_at')
-    //     .eq('driver_id', driverId)
-    //     .eq('status', 'COMPLETED');
-    //
-    // Calculate stats from rides...
+export async function getDriverStats(userId: string): Promise<ApiResponse<DriverStats>> {
+    try {
+        const supabase = createClient();
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
 
-    console.warn('[driverService] getDriverStats: Not connected to backend');
+        // 1. Get Driver Profile (for rating and total rides)
+        const { data: profile } = await (supabase
+            .from('driver_profiles') as any)
+            .select('rating, total_rides')
+            .eq('user_id', userId)
+            .single();
 
-    return {
-        data: null,
-        error: 'Backend not connected',
-        success: false
-    };
+        // 2. Get Today's Completed Rides (for earnings and count)
+        const { data: todayRides } = await (supabase
+            .from('rides') as any)
+            .select('price')
+            .eq('driver_id', userId)
+            .eq('status', 'COMPLETED')
+            .gte('completed_at', startOfToday.toISOString());
+
+        const todayEarnings = todayRides?.reduce((sum: number, r: any) => sum + (r.price || 0), 0) || 0;
+        const todayCount = todayRides?.length || 0;
+
+        // 3. Get All Completed Rides for total earnings calculation if needed
+        const { data: allRides } = await (supabase
+            .from('rides') as any)
+            .select('price')
+            .eq('driver_id', userId)
+            .eq('status', 'COMPLETED');
+
+        const totalEarnings = allRides?.reduce((sum: number, r: any) => sum + (r.price || 0), 0) || 0;
+
+        return {
+            data: {
+                today_earnings: todayEarnings,
+                today_rides: todayCount,
+                total_earnings: totalEarnings,
+                total_rides: profile?.total_rides || 0,
+                average_rating: profile?.rating || 0,
+                week_earnings: 0,
+                month_earnings: 0,
+                completion_rate: 100
+            },
+            success: true
+        };
+    } catch (error) {
+        console.error("Error fetching driver stats:", error);
+        return { success: false, error: "Initialisation des stats échouée", data: null as any };
+    }
 }
 
 /**

@@ -128,6 +128,7 @@ export interface DriverStats {
 
 export type RideStatus =
     | 'SEARCHING'
+    | 'ACCEPTED'
     | 'DRIVER_ASSIGNED'
     | 'DRIVER_ARRIVED'
     | 'IN_PROGRESS'
@@ -144,12 +145,12 @@ export interface Ride {
     driver_id: string | null;
 
     // Locations
-    pickup_latitude: number;
-    pickup_longitude: number;
+    pickup_lat: number;
+    pickup_lng: number;
     pickup_address: string | null;
-    destination_latitude: number;
-    destination_longitude: number;
-    destination_address: string | null;
+    dest_lat: number;
+    dest_lng: number;
+    dest_address: string | null;
 
     // Trip details
     distance_km: number | null;
@@ -157,10 +158,11 @@ export interface Ride {
     route_polyline: string | null;
 
     // Pricing
-    estimated_price: number;
+    price: number;
     final_price: number | null;
     currency: string;
     payment_method: PaymentMethod;
+    vehicle_type: VehicleType;
 
     // Status
     status: RideStatus;
@@ -188,12 +190,13 @@ export interface Ride {
 }
 
 export interface RideRequest {
-    pickup_latitude: number;
-    pickup_longitude: number;
+    pickup_lat: number;
+    pickup_lng: number;
     pickup_address?: string;
-    destination_latitude: number;
-    destination_longitude: number;
-    destination_address?: string;
+    dest_lat: number;
+    dest_lng: number;
+    dest_address?: string;
+    vehicle_type?: VehicleType;
     payment_method?: PaymentMethod;
     scheduled_for?: string;
 }

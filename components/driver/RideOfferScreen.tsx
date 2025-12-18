@@ -61,7 +61,7 @@ export default function RideOfferScreen({ ride, onAccept, onDecline, autoDecline
                     {/* Price - Large */}
                     <div className="text-right">
                         <p className="text-3xl font-heading font-extrabold text-[#F0B90B]">
-                            {ride.price?.toLocaleString()} <span className="text-lg text-white/60">FC</span>
+                            {(ride.price || ride.estimated_price)?.toLocaleString()} <span className="text-lg text-white/60">FC</span>
                         </p>
                         <p className="text-xs text-[#9A9A9A] uppercase tracking-wider">Prix Estimé</p>
                     </div>
@@ -84,7 +84,7 @@ export default function RideOfferScreen({ ride, onAccept, onDecline, autoDecline
                             </p>
                             <div className="flex items-center gap-1 mt-1 text-xs text-[#666]">
                                 <Navigation className="w-3 h-3" />
-                                <span>1.2km de votre position</span>
+                                <span>Rendez-vous à ce point</span>
                             </div>
                         </div>
                     </div>
